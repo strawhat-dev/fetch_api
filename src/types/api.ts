@@ -1,17 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { IncomingHttpHeaders } from 'http';
-import type { KeyOf, Union } from './index.js';
+import type { Union } from './index.js';
 import type { JsonArray, JsonObject, Merge, OmitIndexSignature } from 'type-fest';
 
-export type JsonResponse = JsonArray | JsonObject;
-
-type FetchHandler<T extends JsonResponse = JsonResponse> = {
+export type FetchHandlers<T extends JsonResponse = JsonResponse> = {
   readonly [method in FetchMethod]: <Config extends FetchConfig>(
     input: FetchInput,
     options?: Config,
   ) => Promise<Config['transform'] extends false ? Response : T>;
 };
 
-export type FetchApi = Merge<FetchConfig, FetchHandler>;
+export type FetchApi = Merge<FetchConfig, FetchHandlers>;
 
 export type FetchConfig = Merge<
   Omit<FetchRequestInit, 'method'>,
@@ -41,23 +40,25 @@ export type FetchInput = RequestInfo | URL;
 
 export type FetchRequest = FetchRequestInit & { input: FetchInput };
 
-type FetchErrorHandler = (err: Error, req: FetchRequest) => void;
-
-type FetchResponseHandler = {
+export type FetchResponseHandler = {
   await?: boolean;
   (res: Response, req: FetchRequest): unknown;
 };
 
+export type FetchErrorHandler = (err: Error, req: FetchRequest) => any;
+
+export type JsonResponse = JsonArray | JsonObject;
+
 export type FetchMethod =
   | 'get'
-  | 'head'
   | 'post'
   | 'put'
+  | 'patch'
   | 'delete'
+  | 'head'
   | 'connect'
   | 'options'
-  | 'trace'
-  | 'patch';
+  | 'trace';
 
 // most commonly used content types
 // (https://stackoverflow.com/a/48704300)

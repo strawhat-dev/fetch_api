@@ -20,5 +20,8 @@
   "prettier": {
     "printWidth": 100,
     "singleQuote": true
+  },
+  "dependencies": {
+    "deepmerge-ts": "^5.1.0"
   }
 }
