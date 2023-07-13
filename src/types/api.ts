@@ -1,16 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Entries, JsonArray, JsonObject, Merge } from 'type-fest';
 import type { IncomingHttpHeaders } from 'http';
-import type { Union } from './index.js';
-import type { JsonArray, JsonObject, Merge, OmitIndexSignature } from 'type-fest';
+import type { KeyOf, Union } from './index.js';
 
-export type FetchHandlers<T extends JsonResponse = JsonResponse> = {
-  readonly [method in FetchMethod]: <Config extends FetchConfig>(
-    input: FetchInput,
-    options?: Config,
-  ) => Promise<Config['transform'] extends false ? Response : T>;
-};
+export type JsonResponse = JsonArray | JsonObject;
 
 export type FetchApi = Merge<FetchConfig, FetchHandlers>;
+
+export type FetchHandlers<T extends JsonResponse = JsonResponse> = {
+  [method in FetchMethod]: FetchHandler<T>;
+};
+
+export type FetchHandler<T> = {
+  <Options extends FetchConfig>(
+    input: FetchInput,
+    options?: Options,
+  ): Promise<Options['transform'] extends false ? Response : T>;
+} & FetchConfig;
 
 export type FetchConfig = Merge<
   Omit<FetchRequestInit, 'method'>,
@@ -26,19 +32,14 @@ export type FetchRequestInit = Merge<
   RequestInit,
   {
     method: FetchMethod;
-    headers?: FetchHeaders;
     body?: BodyInit | JsonObject;
+    headers?: Partial<FetchHeaders> | Entries<FetchHeaders>;
   }
 >;
 
-export type FetchHeaders = Merge<
-  OmitIndexSignature<IncomingHttpHeaders>,
-  Partial<Record<'accept' | 'content-type', Union<MimeType>>>
-> & { [header: string]: string };
-
 export type FetchInput = RequestInfo | URL;
 
-export type FetchRequest = FetchRequestInit & { input: FetchInput };
+export type FetchRequest = Merge<FetchRequestInit, { input: FetchInput }>;
 
 export type FetchResponseHandler = {
   await?: boolean;
@@ -47,7 +48,10 @@ export type FetchResponseHandler = {
 
 export type FetchErrorHandler = (err: Error, req: FetchRequest) => any;
 
-export type JsonResponse = JsonArray | JsonObject;
+export type FetchHeaders = Merge<
+  Record<Union<KeyOf<IncomingHttpHeaders>>, string>,
+  Record<'accept' | 'content-type', Union<MimeType>>
+>;
 
 export type FetchMethod =
   | 'get'

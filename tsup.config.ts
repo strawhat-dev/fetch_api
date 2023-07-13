@@ -6,7 +6,6 @@ export default defineConfig({
   format: 'esm',
   clean: true,
   bundle: false,
-  minify: false,
   splitting: true,
   treeshake: true,
   dts: { resolve: true },
