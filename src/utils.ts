@@ -43,7 +43,7 @@ define(Headers.prototype, {
     let entries = (other || []) as [string, string][];
     isHeaders(other) && (entries = [...other.entries()]);
     Array.isArray(entries) || (entries = Object.entries(entries));
-    for (const [k, v] of entries) instance.append(k, v);
+    for (const entry of entries) instance.append(...entry);
     return instance;
   },
 });

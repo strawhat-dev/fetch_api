@@ -25,13 +25,13 @@ export const methods = [
 export const reducer = (handlers: FetchHandlers, method: FetchMethod) => {
   handlers[method] = function (this: FetchApi, input, config) {
     const { baseURL, ...rest } = resolveConfig(this, this[method], config);
-    return _fetch(method, resolveInput(input, baseURL?.trim()), rest);
+    return handleMethod(method, resolveInput(input, baseURL?.trim()), rest);
   };
 
   return handlers;
 };
 
-const _fetch = async (method: FetchMethod, input: FetchInput, config: FetchConfig) => {
+const handleMethod = async (method: FetchMethod, input: FetchInput, config: FetchConfig) => {
   const { transform, onres, onError, ...init } = config as Merge<
     Pick<FetchConfig, 'transform' | 'onres' | 'onError'>,
     RequestInit

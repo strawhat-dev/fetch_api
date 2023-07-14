@@ -7,15 +7,13 @@ export type JsonResponse = JsonArray | JsonObject;
 
 export type FetchApi = Merge<FetchConfig, FetchHandlers>;
 
-export type FetchHandlers<T extends JsonResponse = JsonResponse> = {
-  [method in FetchMethod]: FetchHandler<T>;
-};
+export type FetchHandlers = { [method in FetchMethod]: FetchHandler };
 
-export type FetchHandler<T> = {
-  <Options extends FetchConfig>(
+export type FetchHandler<Options extends FetchConfig = { transform: true }> = {
+  <T = JsonResponse>(
     input: FetchInput,
     options?: Options,
-  ): Promise<Options['transform'] extends false ? Response : T>;
+  ): Promise<Options['transform'] extends true ? Response : T>;
 } & FetchConfig;
 
 export type FetchConfig = Merge<
