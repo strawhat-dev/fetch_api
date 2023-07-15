@@ -1,50 +1,69 @@
-import type { Merge } from 'type-fest';
-import type {
-  FetchApi,
-  FetchConfig,
-  FetchHandlers,
-  FetchInput,
-  FetchMethod,
-  FetchRequest,
-} from './types/api.js';
+import type { JsObject } from '@/types';
+import type { ApiDispatch, FetchApi, FetchConfig, FetchInit, HttpMethod } from '@/types/api';
 
-import { isPromise } from './utils.js';
-import { resolveConfig, resolveInput } from './resolvers.js';
+import { clear, define } from '@/utils';
+import { resolveConfig, resolveInput, resolveRequest } from '@/resolvers';
 
-export const methods = [
+export const HTTP_METHODS = [
   'get',
   'post',
   'put',
   'patch',
-  'delete',
   'head',
+  'options',
   'connect',
   'trace',
-] as const;
+  'delete',
+] as const satisfies readonly HttpMethod[];
 
-export const reducer = (handlers: FetchHandlers, method: FetchMethod) => {
-  handlers[method] = function (this: FetchApi, input, config) {
-    const { baseURL, ...rest } = resolveConfig(this, this[method], config);
-    return handleMethod(method, resolveInput(input, baseURL?.trim()), rest);
-  };
-
-  return handlers;
+export const initapi = (config: FetchInit = {}): FetchApi => {
+  const { defaults, methods } = parseConfig(config);
+  const instance = define(defaults, HTTP_METHODS.reduce(reducer, getInstanceMethods())) as FetchApi;
+  for (const [method, props] of methods) Object.assign(instance[method], props);
+  return instance;
 };
 
-const handleMethod = async (method: FetchMethod, input: FetchInput, config: FetchConfig) => {
-  const { transform, onres, onError, ...init } = config as Merge<
-    Pick<FetchConfig, 'transform' | 'onres' | 'onError'>,
-    RequestInit
-  >;
+export const reducer = (api: Partial<FetchApi>, method: HttpMethod) => {
+  api[method] = function (this: FetchApi, input, config = {}) {
+    const { baseURL, ...rest } = resolveConfig(this, this[method], config);
+    return resolveRequest(method, resolveInput(input, baseURL?.trim()), rest);
+  };
 
-  init.method = method.toUpperCase();
-  const request = { ...init, input } as FetchRequest;
-  const response = await fetch(input, init).catch(
-    typeof onError === 'function' ? (error) => onError(error, request) : undefined,
-  );
+  return api;
+};
 
-  let resolved = onres?.(response, request);
-  if (isPromise(resolved)) resolved = onres!.await ? await resolved : undefined;
-  if (typeof resolved !== 'undefined') return resolved;
-  return transform ? response.json() : response;
+export const getInstanceMethods = (): ApiDispatch => ({
+  create: initapi,
+  configure(this: FetchApi, config) {
+    const { defaults, methods } = parseConfig(config);
+    for (const [method, props] of methods) Object.assign(this[method], props);
+    return Object.assign(this, defaults);
+  },
+  set(this: FetchApi, config) {
+    clear(this);
+    for (const method of HTTP_METHODS) clear(this[method]);
+    return this.configure(config);
+  },
+  with(this: FetchApi, config) {
+    const instance = initapi(this);
+    if (!config) return instance;
+    return instance.configure(config);
+  },
+});
+
+const parseConfig = (config: FetchInit = {}) => {
+  const methods = [];
+  const defaults = {} as JsObject;
+
+  for (const key in config) {
+    const prop = key as HttpMethod;
+    const value = config[prop];
+    if (HTTP_METHODS.includes(prop)) methods.push([prop, value]);
+    else if (!/^(configure|create|set|with)$/.test(key)) defaults[prop] = value;
+  }
+
+  return { defaults, methods } as {
+    defaults: FetchConfig;
+    methods: [HttpMethod, FetchConfig][];
+  };
 };

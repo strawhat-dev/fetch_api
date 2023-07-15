@@ -2,22 +2,23 @@ const { defineConfig } = require('eslint-define-config');
 
 module.exports = defineConfig({
   root: true,
-  env: { es2021: true, node: true },
-  ignorePatterns: ['dist', 'tsup.config.ts', '.eslintrc.cjs'],
+  env: { es2021: true, node: true, browser: true },
+  ignorePatterns: ['dist', '.eslintrc.cjs'],
   plugins: ['import', '@typescript-eslint'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     sourceType: 'module',
     ecmaVersion: 'latest',
-    project: 'tsconfig.json',
+    project: ['tsconfig.json', 'tsconfig.node.json'],
   },
   settings: {
-    'import/parsers': { '@typescript-eslint/parser': ['.ts', '.tsx'] },
+    'import/parsers': { '@typescript-eslint/parser': ['.ts'] },
     'import/resolver': { 'import/resolver': { typescript: { alwaysTryTypes: true } } },
   },
-  extends: ['plugin:import/typescript', 'plugin:@typescript-eslint/recommended', 'prettier'],
+  extends: ['plugin:@typescript-eslint/recommended', 'plugin:import/typescript', 'prettier'],
   rules: {
     '@typescript-eslint/ban-types': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/consistent-type-imports': 'error',
     'import/consistent-type-specifier-style': 'error',
   },

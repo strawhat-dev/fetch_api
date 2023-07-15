@@ -1,12 +1,35 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-import type { JsObject } from './types/index.js';
-import type { FetchConfig, FetchInput } from './types/api.js';
+import type { Merge } from 'type-fest';
+import type { JsObject } from '@/types';
+import type { FetchConfig, FetchInput, FetchRequest, HttpMethod } from '@/types/api';
 
-import { deepmerge, isObject, isRequest } from './utils.js';
+import { isObject, isPromise, isRequest, mergeHeaders, parseFormData } from '@/utils';
+
+export const resolveRequest = async (
+  method: HttpMethod,
+  input: FetchInput,
+  config: FetchConfig,
+) => {
+  const { transform, onres, onError, ...init } = config as Merge<
+    Pick<FetchConfig, 'transform' | 'onres' | 'onError'>,
+    RequestInit
+  >;
+
+  let error;
+  init.method = method.toUpperCase();
+  const req = { ...init, input } as FetchRequest;
+  const res = await fetch(input, init).catch(
+    onError && (((err: Error) => ((error = err), onError(err, req))) as never),
+  );
+
+  let resolved = error || onres?.(res, req);
+  if (onres?.await && isPromise(resolved)) resolved = await resolved;
+  if (!error && typeof resolved !== 'undefined') return resolved;
+  return transform ? res.json() : res;
+};
 
 export const resolveInput = (input: FetchInput, baseURL?: string) => {
-  if (!baseURL || !input) return input ?? baseURL ?? '';
+  if (!baseURL) return input || '';
+  if (!input) return baseURL || '';
   const asRequest = isRequest(input);
   const url = (asRequest ? input.url : input.toString()).trim();
   if (url.startsWith(baseURL)) return input;
@@ -14,30 +37,28 @@ export const resolveInput = (input: FetchInput, baseURL?: string) => {
   return asRequest ? new Request(resolved, input) : resolved;
 };
 
-export const resolveConfig = (...configs: any[]) => {
-  const config = deepmerge({ transform: true }, ...configs) as FetchConfig;
+export const resolveConfig = (...configs: FetchConfig[]) => {
+  const config = configs.reduce(mergeConfigs, { transform: true }) as FetchConfig;
   if (!isObject(config.body)) return config; // skip transforming body
-
-  let contentType;
-  if (Array.isArray(config.headers)) {
-    contentType = (config.headers.find((cur) => /content-type/i.test(cur[0])) ?? []).pop();
-    contentType ??= (config.headers.push(['content-type', 'application/json']), 'application/json');
-  } else {
-    (config.headers ??= {}), (config.headers['content-type'] ??= 'application/json');
-    contentType = config.headers['content-type'] ?? config.headers['Content-Type'];
-  }
-
+  const headers = ((config.headers as unknown as Headers) ??= new Headers());
   const body = config.body as JsObject<string>;
-  if (/multipart[/]form-data/i.test(contentType)) {
-    const formdata = new FormData();
-    for (const [k, v] of Object.entries(body)) formdata.append(k, v);
-    config.body = formdata;
-  } else {
-    const isUrlEncoded = /application[/]x-www-form-urlencoded/i.test(contentType);
-    const isKeyValuePairs = Object.values(body).every((v) => typeof v === 'string');
-    const asURLSearchParams = isUrlEncoded && isKeyValuePairs;
-    config.body = asURLSearchParams ? new URLSearchParams(body) : JSON.stringify(body);
-  }
+  const contentType = headers.get('content-type')!;
+  contentType || headers.set('content-type', 'application/json');
+  config.body = /multipart[/]form-data/i.test(contentType)
+    ? (headers.delete('content-type'), parseFormData(body))
+    : /application[/]x-www-form-urlencoded/i.test(contentType)
+    ? new URLSearchParams(body)
+    : JSON.stringify(body);
 
   return config;
 };
+
+const mergeConfigs = ((acc, { headers, appendHeaders, ...rest } = {}) => {
+  if (headers || appendHeaders) {
+    acc.headers ??= new Headers();
+    headers && mergeHeaders(acc.headers, headers);
+    appendHeaders && mergeHeaders(acc.headers, appendHeaders, 'append');
+  }
+
+  return Object.assign(acc, rest);
+}) as (acc: any, init: FetchConfig) => FetchConfig;
