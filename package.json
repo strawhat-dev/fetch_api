@@ -1,7 +1,7 @@
 {
   "name": "fetched-api",
   "description": "api for fetch api.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "type": "module",
   "module": "./dist/fetched-api.js",
