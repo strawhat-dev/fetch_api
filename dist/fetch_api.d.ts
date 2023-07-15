@@ -1,16 +1,10 @@
 export declare const api: FetchApi;
 export declare const initapi: (config?: FetchInit) => FetchApi;
 
+export type FetchInput = RequestInfo | URL;
+export type FetchRequest = Merge<RequestInit, { input: FetchInput }>;
 export type FetchApi = Merge<FetchConfig, ApiDispatch & RequestDispatch>;
 export type FetchInit = Merge<FetchConfig, PartialRecord<HttpMethod, FetchConfig>>;
-export type FetchRequest = Merge<RequestInit, { input: FetchInput }>;
-export type FetchInput = RequestInfo | URL;
-
-export type FetchHeaders = Merge<
-  Record<KeyOf<IncomingHttpHeaders>, string>,
-  Record<'accept' | 'content-type', Union<MimeType>>
->;
-
 export type FetchConfig = Merge<
   Omit<RequestInit, 'method'>,
   {
@@ -102,69 +96,17 @@ interface RequestDispatch {
   trace: FetchMethod;
 }
 
-type FetchedData = JsonValue;
+type FetchHeaders = Merge<
+  Record<KeyOf<IncomingHttpHeaders>, string>,
+  Record<'accept' | 'content-type', Union<MimeType>>
+>;
 
 type FetchMethod = {
-  <T = FetchedData, Transform extends boolean = true>(
+  <T = JsonValue, Transform extends boolean = true>(
     input: FetchInput,
     options?: FetchConfig & { transform?: Transform },
   ): Promise<Transform extends false ? Response : T>;
 } & FetchConfig;
-
-type HttpMethod =
-  | 'get'
-  | 'post'
-  | 'put'
-  | 'patch'
-  | 'delete'
-  | 'head'
-  | 'connect'
-  | 'options'
-  | 'trace';
-
-type MimeType =
-  | 'application/EDI-X12'
-  | 'application/EDIFACT'
-  | 'application/java-archive'
-  | 'application/javascript'
-  | 'application/json'
-  | 'application/ld+json'
-  | 'application/octet-stream'
-  | 'application/ogg'
-  | 'application/pdf'
-  | 'application/x-shockwave-flash'
-  | 'application/x-www-form-urlencoded'
-  | 'application/xhtml+xml'
-  | 'application/xml'
-  | 'application/zip'
-  | 'audio/mpeg'
-  | 'audio/vnd.rn-realaudio'
-  | 'audio/x-ms-wma'
-  | 'audio/x-wav'
-  | 'image/gif'
-  | 'image/jpeg'
-  | 'image/png'
-  | 'image/svg+xml'
-  | 'image/tiff'
-  | 'image/vnd.djvu'
-  | 'image/x-icon'
-  | 'multipart/alternative'
-  | 'multipart/form-data'
-  | 'multipart/mixed'
-  | 'multipart/related'
-  | 'text/css'
-  | 'text/csv'
-  | 'text/html'
-  | 'text/javascript'
-  | 'text/plain'
-  | 'text/xml'
-  | 'video/mp4'
-  | 'video/mpeg'
-  | 'video/quicktime'
-  | 'video/webm'
-  | 'video/x-flv'
-  | 'video/x-ms-wmv'
-  | 'video/x-msvideo';
 
 interface NonNullish {}
 type Value = Primitive | object;
@@ -231,12 +173,12 @@ type IsLiteral<T> = string extends T
   ? Extends<PickIndexSignature<T>, EmptyObject>
   : Extends<T, Primitive>;
 
+declare const emptyObjectSymbol: unique symbol;
 type Primitive = null | undefined | string | number | boolean | symbol | bigint;
 type JsonObject = { [Key in string]: JsonValue } & { [Key in string]?: JsonValue | undefined };
 type JsonArray = JsonValue[] | readonly JsonValue[];
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonObject | JsonArray;
-declare const emptyObjectSymbol: unique symbol;
 type EmptyObject = { [emptyObjectSymbol]?: never };
 type Simplify<T> = { [KeyType in keyof T]: T[KeyType] } & {};
 type OmitIndexSignature<ObjectType> = {
@@ -300,6 +242,61 @@ type Entries<BaseType> = BaseType extends Map<unknown, unknown>
   : BaseType extends object
   ? ObjectEntries<BaseType>
   : never;
+
+type HttpMethod =
+  | 'get'
+  | 'post'
+  | 'put'
+  | 'patch'
+  | 'delete'
+  | 'head'
+  | 'connect'
+  | 'options'
+  | 'trace';
+
+type MimeType =
+  | 'application/EDI-X12'
+  | 'application/EDIFACT'
+  | 'application/java-archive'
+  | 'application/javascript'
+  | 'application/json'
+  | 'application/ld+json'
+  | 'application/octet-stream'
+  | 'application/ogg'
+  | 'application/pdf'
+  | 'application/x-shockwave-flash'
+  | 'application/x-www-form-urlencoded'
+  | 'application/xhtml+xml'
+  | 'application/xml'
+  | 'application/zip'
+  | 'audio/mpeg'
+  | 'audio/vnd.rn-realaudio'
+  | 'audio/x-ms-wma'
+  | 'audio/x-wav'
+  | 'image/gif'
+  | 'image/jpeg'
+  | 'image/png'
+  | 'image/svg+xml'
+  | 'image/tiff'
+  | 'image/vnd.djvu'
+  | 'image/x-icon'
+  | 'multipart/alternative'
+  | 'multipart/form-data'
+  | 'multipart/mixed'
+  | 'multipart/related'
+  | 'text/css'
+  | 'text/csv'
+  | 'text/html'
+  | 'text/javascript'
+  | 'text/plain'
+  | 'text/xml'
+  | 'video/mp4'
+  | 'video/mpeg'
+  | 'video/quicktime'
+  | 'video/webm'
+  | 'video/x-flv'
+  | 'video/x-ms-wmv'
+  | 'video/x-msvideo';
 
 interface IncomingHttpHeaders {
   accept?: string | undefined;
