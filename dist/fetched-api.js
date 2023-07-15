@@ -170,7 +170,7 @@ const T = /* @__PURE__ */ C(_), $ = async (e, n, a) => {
     i && ((y) => (s = y, i(y, l)))
   );
   let c = s || t?.(o, l);
-  return t?.await && q(c) && (c = await c), !s && typeof c < "u" ? c : f ? o.json() : o;
+  return q(c) && (c = t.await ? await c : void 0), !s && typeof c < "u" ? c : f ? o.json() : o;
 }, E = (e, n) => {
   if (!n)
     return e || "";

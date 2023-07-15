@@ -22,7 +22,7 @@ export const resolveRequest = async (
   );
 
   let resolved = error || onres?.(res, req);
-  if (onres?.await && isPromise(resolved)) resolved = await resolved;
+  isPromise(resolved) && (resolved = onres!.await ? await resolved : undefined);
   if (!error && typeof resolved !== 'undefined') return resolved;
   return transform ? res.json() : res;
 };
