@@ -1,6 +1,8 @@
 import type { JsObject } from '@/types';
 import type { ApiDispatch, FetchConfig, FetchInit, FetchedApi, HttpMethod } from '@/types/api';
 
+// @ts-ignore
+import rfdc from 'rfdc/default';
 import { clear, define } from '@/utils';
 import { resolveConfig, resolveInput, resolveRequest } from '@/resolvers';
 
@@ -20,7 +22,7 @@ export const initapi = (config: FetchInit = {}): FetchedApi => {
   const { defaults, methods } = parseConfig(config);
   const init = HTTP_METHODS.reduce(reducer, getInstanceMethods());
   const instance = define(defaults, init) as FetchedApi;
-  for (const [method, props] of methods) Object.assign(instance[method], props);
+  for (const [method, methodDefaults] of methods) Object.assign(instance[method], methodDefaults);
   return instance;
 };
 
@@ -37,7 +39,7 @@ export const getInstanceMethods = (): ApiDispatch => ({
   create: initapi,
   configure(this: FetchedApi, config) {
     const { defaults, methods } = parseConfig(config);
-    for (const [method, props] of methods) Object.assign(this[method], props);
+    for (const [method, methodDefaults] of methods) Object.assign(this[method], methodDefaults);
     return Object.assign(this, defaults);
   },
   set(this: FetchedApi, config) {
@@ -63,7 +65,7 @@ const parseConfig = (config: FetchInit = {}) => {
     else if (!/^(configure|create|set|with)$/.test(key)) defaults[prop] = value;
   }
 
-  return { defaults, methods } as {
+  return rfdc({ defaults, methods }) as {
     defaults: FetchConfig;
     methods: [HttpMethod, FetchConfig][];
   };

@@ -1,6 +1,6 @@
 {
   "name": "fetched-api",
-  "description": "api for fetch api.",
+  "description": "API for fetch api.",
   "version": "0.0.2",
   "license": "MIT",
   "type": "module",
@@ -20,7 +20,7 @@
   },
   "scripts": {
     "build": "eslint && vite build",
-    "dts": "dts-bundle-generator --export-referenced-types=false --external-inlines http type-fest -o dist/fetch_api.d.ts src/fetch_api.ts"
+    "dts": "dts-bundle-generator --export-referenced-types=false --external-inlines http type-fest -o dist/types.d.ts src/fetch_api.ts"
   },
   "devDependencies": {
     "@types/node": "^20.4.2",
@@ -33,6 +33,7 @@
     "eslint-import-resolver-typescript": "^3.5.5",
     "eslint-plugin-import": "^2.27.5",
     "prettier": "^3.0.0",
+    "rfdc": "^1.3.0",
     "type-fest": "^3.13.0",
     "typescript": "^5.1.6",
     "vite": "^4.4.4",
