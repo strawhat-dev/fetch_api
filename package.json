@@ -1,15 +1,15 @@
 {
-  "name": "fetch_api",
+  "name": "fetched-api",
   "description": "api for fetch api.",
   "version": "0.0.0",
   "license": "MIT",
   "type": "module",
-  "module": "./dist/fetch_api.js",
-  "types": "./dist/fetch_api.d.ts",
+  "module": "./dist/fetched-api.js",
+  "types": "./dist/fetched-api.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/fetch_api.js",
-      "types": "./dist/fetch_api.d.ts"
+      "import": "./dist/fetched-api.js",
+      "types": "./dist/fetched-api.d.ts"
     }
   },
   "files": [

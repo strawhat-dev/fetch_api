@@ -1,9 +1,9 @@
-export declare const api: FetchApi;
-export declare const initapi: (config?: FetchInit) => FetchApi;
+export declare const api: FetchedApi;
+export declare const initapi: (config?: FetchInit) => FetchedApi;
 
 export type FetchInput = RequestInfo | URL;
 export type FetchRequest = Merge<RequestInit, { input: FetchInput }>;
-export type FetchApi = Merge<FetchConfig, ApiDispatch & RequestDispatch>;
+export type FetchedApi = Merge<FetchConfig, ApiDispatch & RequestDispatch>;
 export type FetchInit = Merge<FetchConfig, PartialRecord<HttpMethod, FetchConfig>>;
 export type FetchConfig = Merge<
   Omit<RequestInit, 'method'>,
@@ -23,23 +23,23 @@ interface ApiDispatch {
    * Creates and initializes a new instance.
    * @returns the **new** instance.
    */
-  create(config?: FetchInit): FetchApi;
+  create(config?: FetchInit): FetchedApi;
   /**
    * Configure and update the current instance.
    * @returns the current **mutated** instance.
    */
-  configure(config: FetchInit): FetchApi;
+  configure(config: FetchInit): FetchedApi;
   /**
    * Sets the defaults for the current instance.
    * @returns the current **mutated** instance.
    */
-  set(config: FetchInit): FetchApi;
+  set(config: FetchInit): FetchedApi;
   /**
    * Creates a new instance based off of the current one while,
    * optionally providing a configuration object to merge with.
    * @returns the **new** instance with *inherited* defaults.
    */
-  with(config?: FetchInit): FetchApi;
+  with(config?: FetchInit): FetchedApi;
 }
 
 interface RequestDispatch {

@@ -13,6 +13,6 @@ export default defineConfig({
     outDir: 'dist',
     target: 'esnext',
     emptyOutDir: false,
-    lib: { entry: resolve(root, 'src/fetch_api.ts'), formats: ['es'] },
+    lib: { entry: resolve(root, 'src/fetched-api.ts'), formats: ['es'] },
   },
 });
