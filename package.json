@@ -22,7 +22,8 @@
   },
   "np": {
     "branch": "main",
-    "tests": false
+    "tests": false,
+    "cleanup": false
   },
   "devDependencies": {
     "@rollup/plugin-terser": "^0.4.3",
