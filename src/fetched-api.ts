@@ -1,8 +1,14 @@
-import type { FetchedApi } from '@/types/api';
+import { initapi } from '@/init-api';
 
-import { define } from '@/utils';
-import { HTTP_METHODS, getInstanceMethods, reducer } from '@/lib';
+export type {
+  FetchBody,
+  FetchConfig,
+  FetchHeaders,
+  FetchInit,
+  FetchInput,
+  FetchRequest,
+  FetchedApi,
+} from '@/types/api';
 
-export { initapi } from '@/lib';
-
-export const api = define(HTTP_METHODS.reduce(reducer, getInstanceMethods())) as FetchedApi;
+export { initapi };
+export default /* @__PURE__ */ initapi();

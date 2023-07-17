@@ -1,27 +1,47 @@
 import type { IncomingHttpHeaders } from 'http';
-import type { Entries, JsonObject, JsonValue, Merge } from 'type-fest';
-import type { KeyOf, PartialRecord, Union } from '@/types';
+import type {
+  Entries,
+  JsonObject,
+  JsonPrimitive,
+  Jsonifiable,
+  KeyOf,
+  Merge,
+  PartialRecord,
+  Union,
+} from '@/types';
+
+export type HttpMethod =
+  | 'get'
+  | 'post'
+  | 'put'
+  | 'patch'
+  | 'delete'
+  | 'head'
+  | 'connect'
+  | 'options'
+  | 'trace';
 
 export type FetchInput = RequestInfo | URL;
 export type FetchRequest = Merge<RequestInit, { input: FetchInput }>;
-export type FetchedApi = Merge<FetchConfig, ApiDispatch & RequestDispatch>;
+export type FetchConfig = Merge<Omit<RequestInit, 'method'>, ApiOptions>;
+export type FetchHeaders = Headers | Partial<HttpHeaders> | Entries<HttpHeaders>;
 export type FetchInit = Merge<FetchConfig, PartialRecord<HttpMethod, FetchConfig>>;
-export type FetchConfig = Merge<
-  Omit<RequestInit, 'method'>,
-  {
-    baseURL?: string;
-    transform?: boolean;
-    body?: BodyInit | JsonObject;
-    headers?: Partial<FetchHeaders> | Entries<FetchHeaders>;
-    appendHeaders?: Partial<FetchHeaders> | Entries<FetchHeaders>;
-    onres?: ((res: Response, req: FetchRequest) => unknown) & { await?: boolean };
-    onError?: (err: Error, req: FetchRequest) => any;
-  }
->;
+export interface FetchedApi extends Merge<FetchConfig, ApiDispatch & RequestDispatch> {}
+export type FetchBody = BodyInit | Jsonifiable | Set<Jsonifiable> | Map<JsonPrimitive, Jsonifiable>;
+interface ApiOptions {
+  transform?: boolean;
+  baseURL?: string;
+  body?: FetchBody;
+  query?: JsonObject;
+  headers?: FetchHeaders;
+  appendHeaders?: FetchHeaders;
+  onres?: FetchResponseHandler | { await: FetchResponseHandler };
+  onError?: (req: { error?: Error } & FetchRequest) => any;
+}
 
 export interface ApiDispatch {
   /**
-   * Creates and initializes a new instance.
+   * Create and initialize a new instance.
    * @returns the **new** instance.
    */
   create(config?: FetchInit): FetchedApi;
@@ -31,16 +51,16 @@ export interface ApiDispatch {
    */
   configure(config: FetchInit): FetchedApi;
   /**
+   * Create a new instance based off of the current one while
+   * optionally providing a new config object to merge with.
+   * @returns the **new** instance with *inherited* defaults.
+   */
+  with(config?: FetchInit): FetchedApi;
+  /**
    * Sets the defaults for the current instance.
    * @returns the current **mutated** instance.
    */
   set(config: FetchInit): FetchedApi;
-  /**
-   * Creates a new instance based off of the current one while,
-   * optionally providing a configuration object to merge with.
-   * @returns the **new** instance with *inherited* defaults.
-   */
-  with(config?: FetchInit): FetchedApi;
 }
 
 export interface RequestDispatch {
@@ -55,18 +75,18 @@ export interface RequestDispatch {
    * often causing a change in state or side effects on the server.
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST}
    */
-  post: FetchMethod;
+  post: FetchMethodWithBody;
   /**
    * The `PUT` method replaces all current representations
    * of the target resource with the request payload.
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/PUT}
    */
-  put: FetchMethod;
+  put: FetchMethodWithBody;
   /**
    * The `PATCH` method applies partial modifications to a resource.
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/PATCH}
    */
-  patch: FetchMethod;
+  patch: FetchMethodWithBody;
   /**
    * The `DELETE` method deletes the specified resource.
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/DELETE}
@@ -97,34 +117,33 @@ export interface RequestDispatch {
   trace: FetchMethod;
 }
 
-export type FetchMethod = {
-  <T = JsonValue, Transform extends boolean = true>(
+type FetchMethod = {
+  <Data = JsonObject, Transform extends boolean = true>(
     input: FetchInput,
-    options?: FetchConfig & { transform?: Transform },
-  ): Promise<Transform extends false ? Response : T>;
+    options?: FetchOptions & { transform?: Transform },
+  ): Promise<Transform extends false ? Response : Data>;
 } & FetchConfig;
 
-export type FetchHeaders = Merge<
-  Record<KeyOf<IncomingHttpHeaders>, string>,
-  Record<'accept' | 'content-type', Union<MimeType>>
->;
+type FetchMethodWithBody = {
+  <Data = JsonObject, Transform extends boolean = true>(
+    input: FetchInput,
+    body: FetchBody,
+    options?: Omit<FetchOptions, 'body'> & { transform?: Transform },
+  ): Promise<Transform extends false ? Response : Data>;
+} & FetchConfig;
 
-export type HttpMethod =
-  | 'get'
-  | 'post'
-  | 'put'
-  | 'patch'
-  | 'delete'
-  | 'head'
-  | 'connect'
-  | 'options'
-  | 'trace';
+type FetchOptions = FetchConfig & { method?: Union<HttpMethod> };
+type FetchResponseHandler = (res: Response, req: FetchRequest) => unknown;
+type HttpHeaders = Merge<
+  Record<Union<KeyOf<IncomingHttpHeaders>>, string>,
+  Record<'accept' | 'content-type', Union<ContentMimeType>>
+>;
 
 /**
  * common content-types \
  * {@link https://stackoverflow.com/a/48704300}
  */
-type MimeType =
+type ContentMimeType =
   | 'application/EDI-X12'
   | 'application/EDIFACT'
   | 'application/java-archive'

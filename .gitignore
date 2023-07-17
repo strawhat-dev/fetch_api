@@ -1,5 +1,6 @@
 # https://github.com/github/gitignore/blob/main/Node.gitignore
-main.ts
+.vscode
+.temp.d.ts
 
 # Logs
 logs

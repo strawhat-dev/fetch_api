@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2021",
+    "target": "es2022",
     "module": "esnext",
     "moduleDetection": "force",
     "moduleResolution": "bundler",
@@ -15,8 +15,8 @@
     "verbatimModuleSyntax": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
     "outDir": "dist",
+    "baseUrl": ".",
     "paths": { "@/*": ["src/*"] }
   },
   "include": ["src"],

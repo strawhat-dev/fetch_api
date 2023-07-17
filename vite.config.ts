@@ -1,18 +1,43 @@
+import type { JsMinifyOptions } from 'terser';
+
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { defineConfig } from 'vitest/config';
+import dts from 'vite-plugin-dts';
+import terser from '@rollup/plugin-terser';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 const root = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   root,
-  plugins: [tsconfigPaths({ root })],
-  esbuild: { platform: 'neutral', target: 'es2021', format: 'esm', treeShaking: true },
+  esbuild: {
+    format: 'esm',
+    target: 'node18',
+    platform: 'neutral',
+    treeShaking: true,
+  },
   build: {
     outDir: 'dist',
+    minify: 'terser',
     target: 'esnext',
-    emptyOutDir: false,
     lib: { entry: resolve(root, 'src/fetched-api.ts'), formats: ['es'] },
+    rollupOptions: { output: { esModule: true, interop: 'esModule' }, treeshake: true },
   },
+  plugins: [
+    tsconfigPaths({ root }),
+    dts({
+      root,
+      rollupTypes: true,
+      bundledPackages: ['http', 'type-fest'],
+    }),
+    terser({
+      ecma: 2022,
+      mangle: true,
+      module: true,
+      toplevel: true,
+      compress: true,
+      format: { ecma: 2022, comments: 'all' },
+    } as JsMinifyOptions as {}),
+  ],
 });
