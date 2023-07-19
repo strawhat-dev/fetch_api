@@ -2,9 +2,19 @@ import type { JsObject, Primitive } from '@/types';
 
 export const extend = (target: object, props?: JsObject) => {
   props || ([target, props] = [{}, target as JsObject]);
-  for (const [prop, value] of Object.entries(props)) {
-    typeof value === 'function' && Object.defineProperty(value, 'name', { value: prop });
-    Object.defineProperty(target, prop, { value });
+  for (const key of Object.keys(props)) {
+    const value = props[key];
+    if (typeof value === 'function' && !value.name) {
+      Object.defineProperty(value, 'name', { value: key, configurable: true });
+    }
+
+    if (key in target) {
+      const prev = (target as JsObject)[key];
+      !isPrimitive(value) && !isPrimitive(prev) && Object.assign(value!, prev);
+      continue;
+    }
+
+    Object.defineProperty(target, key, { value });
   }
 
   return target;
@@ -12,15 +22,14 @@ export const extend = (target: object, props?: JsObject) => {
 
 export const clear = (target: object) => {
   target ||= {};
-  for (const key of Object.keys(target)) delete target[key as never];
+  for (const key of Object.keys(target)) delete (target as JsObject)[key];
   return target;
 };
 
-export const jsonify = (target: unknown) => {
+export const jsonify = (target: any) => {
   if (isPrimitive(target)) return target?.toString();
-  const t = type(target);
-  if (t === 'Set') target = [...(target as Set<unknown>)];
-  if (t === 'Map') target = Object.fromEntries(target as Map<unknown, unknown>);
+  if (target instanceof Map) return JSON.stringify(Object.fromEntries(target));
+  if (Symbol.iterator in target) return JSON.stringify([...target]);
   return JSON.stringify(target);
 };
 
@@ -28,38 +37,62 @@ export const clone = <T>(target: T): T => {
   const t = type(target);
   if (isPrimitive(target)) return target;
   if (Array.isArray(target)) return target.map(clone) as T;
-  if (t === 'RegExp') return new RegExp(target as '') as T;
-  if (t === 'Date') return new Date(target as '') as T;
-  if (t === 'Set') return new Set(clone([...(target as [])])) as T;
-  if (t === 'Map') return new Map(clone([...(target as [])])) as T;
-  if (target instanceof Blob) return cloneBuffer(target);
-  if (t.endsWith('ArrayBuffer')) return cloneBuffer(target);
-  if (ArrayBuffer.isView(target)) return cloneBuffer(target);
+  if (ArrayBuffer.isView(target)) return structured_clone(target);
+  if (STRUCTURED_CLONABLE_TYPES.has(t)) return structured_clone(target);
+  if (SELF_CONSTRUCTABLE_TYPES.has(t)) return new (target as any).constructor(target);
+  if (target instanceof Set) return new Set([...target].map(clone)) as T;
+  if (target instanceof Map) return new Map([...target].map(clone)) as T;
+  if (target instanceof Node) return target.cloneNode(true) as T;
 
-  const obj = {} as JsObject<unknown>;
-  for (const key in target) {
-    if (!Object.hasOwn(target as {}, key)) continue;
-    let cur = target[key];
-    isPrimitive(cur) || (cur = clone(cur));
-    obj[key] = cur;
+  const copy = {} as JsObject;
+  for (const key of Object.keys(target as {})) {
+    let value = (target as JsObject)[key];
+    isPrimitive(value) || (value = clone(value));
+    copy[key] = value;
   }
 
-  return obj as T;
+  return copy as T;
 };
 
-const cloneBuffer = globalThis['structuredClone'] || ((value) => value);
+const structured_clone = globalThis['structuredClone'] || ((target) => target);
 const type = (value: unknown) => Object.prototype.toString.call(value).slice(8, -1);
+export const isValidFetchBody = (value: unknown): value is BodyInit => isValidFormDataValue(value) || ArrayBuffer.isView(value) || BODY_TYPES.has(type(value));
+export const isValidFormDataValue = (value: unknown): value is FormDataEntryValue => typeof value === 'string' || value instanceof Blob;
+export const isPromise = (value: unknown): value is Promise<unknown> => type(value) === 'Promise';
 export const isRequest = (value: unknown): value is Request => type(value) === 'Request';
 export const isHeaders = (value: unknown): value is Headers => type(value) === 'Headers';
-export const isPromise = (value: unknown): value is Promise<unknown> => type(value) === 'Promise';
-export const isPrimitive = (value: unknown): value is Primitive => !value || typeof value !== 'object';
-export const isValidFormDataValue = (value: unknown): value is string | Blob => typeof value === 'string' || value instanceof Blob;
-export const isValidFetchBody = (value: unknown): value is BodyInit => {
-  const t = type(value);
-  if (t === 'FormData') return true;
-  if (t === 'ReadableStream') return true;
-  if (t === 'URLSearchParams') return true;
-  if (t.endsWith('ArrayBuffer')) return true;
-  if (ArrayBuffer.isView(value)) return true;
-  return isValidFormDataValue(value);
+export const isPrimitive = (value: unknown): value is Primitive => {
+  if (!value) return true;
+  const t = typeof value;
+  return t !== 'object' && t !== 'function';
 };
+
+const BODY_TYPES = new Set(['URLSearchParams', 'FormData', 'ReadableStream', 'ArrayBuffer', 'SharedArrayBuffer']);
+const SELF_CONSTRUCTABLE_TYPES = new Set(['Date', 'Error', 'Headers', 'RegExp', 'Request', 'Response', 'URL', 'URLSearchParams']);
+const STRUCTURED_CLONABLE_TYPES = new Set([
+  'ArrayBuffer',
+  'AudioData',
+  'Blob',
+  'CropTarget',
+  'CryptoKey',
+  'DOMException',
+  'DOMMatrix',
+  'DOMMatrixReadOnly',
+  'DOMPoint',
+  'DOMPointReadOnly',
+  'DOMQuad',
+  'DOMRect',
+  'DOMRectReadOnly',
+  'File',
+  'FileList',
+  'FileSystemDirectoryHandle',
+  'FileSystemFileHandle',
+  'FileSystemHandle',
+  'GPUCompilationInfo',
+  'GPUCompilationMessage',
+  'ImageBitmap',
+  'ImageData',
+  'RTCCertificate',
+  'SharedArrayBuffer',
+  'VideoFrame',
+]);

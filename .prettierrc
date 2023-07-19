@@ -1,5 +1,5 @@
 {
   "printWidth": 100,
   "singleQuote": true,
-  "overrides": [{ "files": "src/utils.ts", "options": { "printWidth": 150 } }]
+  "overrides": [{ "files": "src/utils.ts", "options": { "printWidth": 175 } }]
 }

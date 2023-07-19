@@ -59,7 +59,7 @@ type OptionalFilter<T, Key extends keyof T> = Type<
   undefined extends T[Key] ? (T[Key] extends undefined ? never : Key) : never
 >;
 
-type Extends<T1, T2> = Type<
+export type Extends<T1, T2> = Type<
   [T1] extends [never] ? false : [T2] extends [never] ? false : T1 extends T2 ? true : false
 >;
 

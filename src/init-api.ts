@@ -1,5 +1,10 @@
 import type { JsObject, KeyOf } from '@/types';
-import type { ApiDispatch, FetchInit, FetchedApi, HttpMethod } from '@/types/api';
+import type {
+  ApiDispatch,
+  FetchInit,
+  FetchedApi,
+  HttpMethod,
+} from '@/types/api';
 
 import { clear, clone, extend, isPrimitive } from '@/utils';
 import { resolveConfig, resolveInput, resolveRequest } from '@/request-parser';
@@ -18,6 +23,14 @@ export const HTTP_METHODS = new Set([
 
 export const initapi = (defaults: FetchInit = {}): FetchedApi => {
   const api = getInstanceMethods() as Partial<FetchedApi>;
+
+  Object.defineProperties(api, {
+    create: METHOD_DESCRIPTOR,
+    configure: METHOD_DESCRIPTOR,
+    with: METHOD_DESCRIPTOR,
+    set: METHOD_DESCRIPTOR,
+  });
+
   for (const method of HTTP_METHODS) {
     if (method === 'post' || method === 'put' || method === 'patch') {
       api[method] = function (this: FetchedApi, input, body, config = {}) {
@@ -38,6 +51,12 @@ export const initapi = (defaults: FetchInit = {}): FetchedApi => {
   }
 
   return extend(clone(defaults), api) as FetchedApi;
+};
+
+const METHOD_DESCRIPTOR: PropertyDescriptor = {
+  configurable: false,
+  enumerable: false,
+  writable: false,
 };
 
 const getInstanceMethods = (): ApiDispatch => ({
