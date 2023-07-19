@@ -1,37 +1,6 @@
 import type { JsObject, Primitive } from '@/types';
 
-export const extend = (target: object, props?: JsObject) => {
-  props || ([target, props] = [{}, target as JsObject]);
-  for (const key of Object.keys(props)) {
-    const value = props[key];
-    if (typeof value === 'function' && !value.name) {
-      Object.defineProperty(value, 'name', { value: key, configurable: true });
-    }
-
-    if (key in target) {
-      const prev = (target as JsObject)[key];
-      !isPrimitive(value) && !isPrimitive(prev) && Object.assign(value!, prev);
-      continue;
-    }
-
-    Object.defineProperty(target, key, { value });
-  }
-
-  return target;
-};
-
-export const clear = (target: object) => {
-  target ||= {};
-  for (const key of Object.keys(target)) delete (target as JsObject)[key];
-  return target;
-};
-
-export const jsonify = (target: any) => {
-  if (isPrimitive(target)) return target?.toString();
-  if (target instanceof Map) return JSON.stringify(Object.fromEntries(target));
-  if (Symbol.iterator in target) return JSON.stringify([...target]);
-  return JSON.stringify(target);
-};
+const structured_clone = globalThis['structuredClone'] || ((target) => target);
 
 export const clone = <T>(target: T): T => {
   const t = type(target);
@@ -44,23 +13,37 @@ export const clone = <T>(target: T): T => {
   if (target instanceof Map) return new Map([...target].map(clone)) as T;
   if (target instanceof Node) return target.cloneNode(true) as T;
 
-  const copy = {} as JsObject;
-  for (const key of Object.keys(target as {})) {
+  const copy = {};
+  for (const key of Object.keys(target!)) {
     let value = (target as JsObject)[key];
     isPrimitive(value) || (value = clone(value));
-    copy[key] = value;
+    (copy as JsObject)[key] = value;
   }
 
   return copy as T;
 };
 
-const structured_clone = globalThis['structuredClone'] || ((target) => target);
+export const clear = (target: object) => {
+  if (!target) return {};
+  for (const key of Object.keys(target)) {
+    delete (target as JsObject)[key];
+  }
+
+  return target;
+};
+
+export const jsonify = (target: {} | []) => {
+  if (isPrimitive(target)) return target?.toString();
+  if (target instanceof Map) return JSON.stringify(Object.fromEntries(target));
+  if (Symbol.iterator in target) return JSON.stringify([...target]);
+  return JSON.stringify(target);
+};
+
 const type = (value: unknown) => Object.prototype.toString.call(value).slice(8, -1);
-export const isValidFetchBody = (value: unknown): value is BodyInit => isValidFormDataValue(value) || ArrayBuffer.isView(value) || BODY_TYPES.has(type(value));
-export const isValidFormDataValue = (value: unknown): value is FormDataEntryValue => typeof value === 'string' || value instanceof Blob;
+export const isFormDataEntryValue = (value: unknown): value is FormDataEntryValue => typeof value === 'string' || value instanceof Blob;
+export const isBodyInit = (value: unknown): value is BodyInit => isFormDataEntryValue(value) || ArrayBuffer.isView(value) || BODY_TYPES.has(type(value));
 export const isPromise = (value: unknown): value is Promise<unknown> => type(value) === 'Promise';
 export const isRequest = (value: unknown): value is Request => type(value) === 'Request';
-export const isHeaders = (value: unknown): value is Headers => type(value) === 'Headers';
 export const isPrimitive = (value: unknown): value is Primitive => {
   if (!value) return true;
   const t = typeof value;

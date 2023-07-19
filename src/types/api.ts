@@ -1,6 +1,7 @@
 import type { IncomingHttpHeaders } from 'http';
 import type {
   Entries,
+  JsObject,
   JsonObject,
   JsonPrimitive,
   Jsonifiable,
@@ -10,17 +11,7 @@ import type {
   Union,
 } from '@/types';
 
-export type HttpMethod =
-  | 'get'
-  | 'post'
-  | 'put'
-  | 'patch'
-  | 'delete'
-  | 'head'
-  | 'connect'
-  | 'options'
-  | 'trace';
-
+export type HttpMethod = KeyOf<RequestDispatch>;
 export type FetchInput = RequestInfo | URL;
 export type FetchRequest = Merge<RequestInit, { input: FetchInput }>;
 export type FetchConfig = Merge<Omit<RequestInit, 'method'>, ApiOptions>;
@@ -28,6 +19,10 @@ export type FetchHeaders = Headers | Partial<HttpHeaders> | Entries<HttpHeaders>
 export type FetchInit = Merge<FetchConfig, PartialRecord<HttpMethod, FetchConfig>>;
 export interface FetchedApi extends Merge<FetchConfig, ApiDispatch & RequestDispatch> {}
 export type FetchBody = BodyInit | Jsonifiable | Set<Jsonifiable> | Map<JsonPrimitive, Jsonifiable>;
+export type FetchParams =
+  | JsObject<JsonPrimitive>
+  | ConstructorParameters<typeof URLSearchParams>[0];
+
 interface ApiOptions {
   transform?: boolean;
   baseURL?: string;
@@ -41,26 +36,26 @@ interface ApiOptions {
 
 export interface ApiDispatch {
   /**
-   * Create and initialize a new instance.
-   * @returns the **new** instance.
+   * Set the defaults for the current instance.
+   * @returns the current **mutated** instance.
    */
-  create(config?: FetchInit): FetchedApi;
+  set(config: FetchInit): FetchedApi;
   /**
    * Configure and update the current instance.
    * @returns the current **mutated** instance.
    */
   configure(config: FetchInit): FetchedApi;
   /**
+   * Create and initialize a new instance.
+   * @returns the **new** instance.
+   */
+  create(config?: FetchInit): FetchedApi;
+  /**
    * Create a new instance based off of the current one while
    * optionally providing a new config object to merge with.
    * @returns the **new** instance with *inherited* defaults.
    */
   with(config?: FetchInit): FetchedApi;
-  /**
-   * Sets the defaults for the current instance.
-   * @returns the current **mutated** instance.
-   */
-  set(config: FetchInit): FetchedApi;
 }
 
 export interface RequestDispatch {
@@ -69,7 +64,7 @@ export interface RequestDispatch {
    * Requests using `GET` should only retrieve data.
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/GET}
    */
-  get: FetchMethod;
+  get: FetchMethodWithoutBody;
   /**
    * The `POST` method submits an entity to the specified resource,
    * often causing a change in state or side effects on the server.
@@ -93,16 +88,17 @@ export interface RequestDispatch {
    */
   delete: FetchMethod;
   /**
-   * The `OPTIONS` method describes the communication options for the target resource.
-   * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/OPTIONS}
-   */
-  options: FetchMethod;
-  /**
    * The `HEAD` method asks for a response identical
    * to a `GET` request, but without the response body.
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/HEAD}
    */
-  head: FetchMethod;
+  head: FetchMethodWithoutBody;
+  /**
+   * The `TRACE` method performs a message loop-back
+   * test along the path to the target resource.
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/TRACE}
+   */
+  trace: FetchMethod;
   /**
    * The `CONNECT` method establishes a tunnel to
    * the server identified by the target resource.
@@ -110,11 +106,10 @@ export interface RequestDispatch {
    */
   connect: FetchMethod;
   /**
-   * The `TRACE` method performs a message loop-back
-   * test along the path to the target resource.
-   * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/TRACE}
+   * The `OPTIONS` method describes the communication options for the target resource.
+   * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/OPTIONS}
    */
-  trace: FetchMethod;
+  options: FetchMethod;
 }
 
 type FetchMethod = {
@@ -131,6 +126,13 @@ type FetchMethodWithBody = {
     options?: Omit<FetchOptions, 'body'> & { transform?: Transform },
   ): Promise<Transform extends false ? Response : Data>;
 } & FetchConfig;
+
+type FetchMethodWithoutBody = {
+  <Data = JsonObject, Transform extends boolean = true>(
+    input: FetchInput,
+    options?: Omit<FetchOptions, 'body'> & { transform?: Transform },
+  ): Promise<Transform extends false ? Response : Data>;
+} & Omit<FetchConfig, 'body'>;
 
 type FetchOptions = FetchConfig & { method?: Union<HttpMethod> };
 type FetchResponseHandler = (res: Response, req: FetchRequest) => unknown;

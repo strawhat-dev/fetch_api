@@ -14,6 +14,7 @@ import type {
 export type { Entries, JsonPrimitive, Jsonifiable, Primitive };
 
 export interface NonNullish {}
+export type Maybe<T> = T | undefined;
 export type JsonObject = { [key in string]?: JsonValue };
 export type JsObject<value = unknown> = { [key: string]: value };
 export type Union<T> = IsLiteral<T> extends true ? T | (Narrow<T> & NonNullish) : T;

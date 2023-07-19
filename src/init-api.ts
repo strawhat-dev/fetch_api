@@ -1,73 +1,46 @@
-import type { JsObject, KeyOf } from '@/types';
-import type {
-  ApiDispatch,
-  FetchInit,
-  FetchedApi,
-  HttpMethod,
-} from '@/types/api';
+import type { JsObject } from '@/types';
+import type { ApiDispatch, FetchInit, FetchedApi } from '@/types/api';
 
-import { clear, clone, extend, isPrimitive } from '@/utils';
-import { resolveConfig, resolveInput, resolveRequest } from '@/request-parser';
+import { clear, clone, isPrimitive } from '@/utils';
+import { fetchedMethod, mergeHeaders, parseConfig, parseInput } from '@/transform';
 
-export const HTTP_METHODS = new Set([
-  'get',
-  'post',
-  'put',
-  'patch',
-  'head',
-  'options',
-  'connect',
-  'trace',
-  'delete',
-] as const satisfies readonly HttpMethod[]);
-
-export const initapi = (defaults: FetchInit = {}): FetchedApi => {
-  const api = getInstanceMethods() as Partial<FetchedApi>;
-
-  Object.defineProperties(api, {
-    create: METHOD_DESCRIPTOR,
-    configure: METHOD_DESCRIPTOR,
-    with: METHOD_DESCRIPTOR,
-    set: METHOD_DESCRIPTOR,
-  });
-
+export const initapi = (defaults?: FetchInit): FetchedApi => {
+  const api = getInstanceMethods() as FetchedApi;
   for (const method of HTTP_METHODS) {
     if (method === 'post' || method === 'put' || method === 'patch') {
-      api[method] = function (this: FetchedApi, input, body, config = {}) {
+      api[method] = (input, body, config) => {
+        config ||= {};
         (config as JsObject).body = body;
-        const { baseURL, query, ...rest } = resolveConfig(this, this[method], config);
-        const url = resolveInput(input, baseURL?.trim(), query);
-        return resolveRequest(method, url, rest);
+        const headers = mergeHeaders(api, api[method], config);
+        const { baseURL, query, ...rest } = parseConfig(api, api[method], config, headers);
+        const url = parseInput(input, baseURL?.trim(), query);
+        return fetchedMethod(method, url, rest);
       };
     } else {
-      api[method] = function (this: FetchedApi, input, config = {}) {
-        const { baseURL, query, ...rest } = resolveConfig(this, this[method], config);
-        const url = resolveInput(input, baseURL?.trim(), query);
-        return resolveRequest(method, url, rest);
+      api[method] = (input, config) => {
+        const headers = mergeHeaders(api, api[method], config!);
+        const { baseURL, query, ...rest } = parseConfig(api, api[method], config!, headers);
+        const url = parseInput(input, baseURL?.trim(), query);
+        return fetchedMethod(method, url, rest);
       };
     }
 
-    defaults[method] && Object.assign(api[method]!, clone(defaults[method]));
+    defaults?.[method] && Object.assign(api[method], clone(defaults[method]));
   }
 
-  return extend(clone(defaults), api) as FetchedApi;
-};
-
-const METHOD_DESCRIPTOR: PropertyDescriptor = {
-  configurable: false,
-  enumerable: false,
-  writable: false,
+  Object.defineProperties(api, DESCRIPTOR_MAP);
+  return Object.assign(api, clone(defaults)) as FetchedApi;
 };
 
 const getInstanceMethods = (): ApiDispatch => ({
   create: initapi,
   configure(this: FetchedApi, config) {
-    let key: KeyOf<FetchInit>;
-    for (key in config) {
-      let value = config[key];
+    const api = this as JsObject<any>;
+    for (const key of Object.keys(config)) {
+      let value = (config as JsObject)[key];
       isPrimitive(value) || (value = clone(value));
-      const isMethod = typeof this[key] === 'function';
-      isMethod ? Object.assign(this[key]!, value) : ((this as JsObject)[key] = value);
+      const isMethod = typeof api[key] === 'function';
+      isMethod ? Object.assign(api[key], value) : (api[key] = value);
     }
 
     return this;
@@ -83,3 +56,37 @@ const getInstanceMethods = (): ApiDispatch => ({
     return this.configure(config);
   },
 });
+
+const HTTP_METHODS = new Set([
+  'get',
+  'post',
+  'put',
+  'patch',
+  'delete',
+  'head',
+  'trace',
+  'connect',
+  'options',
+] as const);
+
+const METHOD_DESCRIPTOR = {
+  configurable: false,
+  enumerable: false,
+  writable: false,
+} as const;
+
+const DESCRIPTOR_MAP = {
+  create: METHOD_DESCRIPTOR,
+  configure: METHOD_DESCRIPTOR,
+  with: METHOD_DESCRIPTOR,
+  set: METHOD_DESCRIPTOR,
+  get: METHOD_DESCRIPTOR,
+  post: METHOD_DESCRIPTOR,
+  put: METHOD_DESCRIPTOR,
+  patch: METHOD_DESCRIPTOR,
+  delete: METHOD_DESCRIPTOR,
+  head: METHOD_DESCRIPTOR,
+  trace: METHOD_DESCRIPTOR,
+  connect: METHOD_DESCRIPTOR,
+  options: METHOD_DESCRIPTOR,
+} as const;
