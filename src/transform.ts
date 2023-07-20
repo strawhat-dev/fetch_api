@@ -61,7 +61,6 @@ export const mergeHeaders = (...configs: FetchConfig[]) => {
         }
       }
     }
-
     if (appendHeaders) {
       if (!resolved.headers) resolved.headers = new Headers(appendHeaders as {});
       else {
@@ -76,7 +75,7 @@ export const mergeHeaders = (...configs: FetchConfig[]) => {
   return resolved;
 };
 
-export const parseFormData = (obj: object) => {
+const parseFormData = (obj: object) => {
   const fd = new FormData();
   if (obj == null) return fd;
   typeof obj === 'object' || (obj = { 0: obj });

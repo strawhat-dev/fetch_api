@@ -39,7 +39,6 @@ export const jsonify = (target: {} | []) => {
   return JSON.stringify(target);
 };
 
-const type = (value: unknown) => Object.prototype.toString.call(value).slice(8, -1);
 export const isFormDataEntryValue = (value: unknown): value is FormDataEntryValue => typeof value === 'string' || value instanceof Blob;
 export const isBodyInit = (value: unknown): value is BodyInit => isFormDataEntryValue(value) || ArrayBuffer.isView(value) || BODY_TYPES.has(type(value));
 export const isPromise = (value: unknown): value is Promise<unknown> => type(value) === 'Promise';
@@ -50,6 +49,7 @@ export const isPrimitive = (value: unknown): value is Primitive => {
   return t !== 'object' && t !== 'function';
 };
 
+const type = (value: unknown) => Object.prototype.toString.call(value).slice(8, -1);
 const BODY_TYPES = new Set(['URLSearchParams', 'FormData', 'ReadableStream', 'ArrayBuffer', 'SharedArrayBuffer']);
 const SELF_CONSTRUCTABLE_TYPES = new Set(['Date', 'Error', 'Headers', 'RegExp', 'Request', 'Response', 'URL', 'URLSearchParams']);
 const STRUCTURED_CLONABLE_TYPES = new Set([

@@ -18,8 +18,9 @@ export const initapi = (defaults?: FetchInit): FetchedApi => {
       };
     } else {
       api[method] = (input, config) => {
-        const headers = mergeHeaders(api, api[method], config!);
-        const { baseURL, query, ...rest } = parseConfig(api, api[method], config!, headers);
+        config ||= {};
+        const headers = mergeHeaders(api, api[method], config);
+        const { baseURL, query, ...rest } = parseConfig(api, api[method], config, headers);
         const url = parseInput(input, baseURL?.trim(), query);
         return fetchedMethod(method, url, rest);
       };
@@ -29,14 +30,14 @@ export const initapi = (defaults?: FetchInit): FetchedApi => {
   }
 
   Object.defineProperties(api, DESCRIPTOR_MAP);
-  return Object.assign(api, clone(defaults)) as FetchedApi;
+  return defaults ? Object.assign(api, clone(defaults)) : api;
 };
 
 const getInstanceMethods = (): ApiDispatch => ({
   create: initapi,
   configure(this: FetchedApi, config) {
     const api = this as JsObject<any>;
-    for (const key of Object.keys(config)) {
+    for (const key of Object.keys(config || {})) {
       let value = (config as JsObject)[key];
       isPrimitive(value) || (value = clone(value));
       const isMethod = typeof api[key] === 'function';
@@ -45,15 +46,15 @@ const getInstanceMethods = (): ApiDispatch => ({
 
     return this;
   },
-  with(this: FetchedApi, config) {
-    const instance = initapi(this);
-    if (!config) return instance;
-    return instance.configure(config);
-  },
   set(this: FetchedApi, config) {
     clear(this);
     for (const method of HTTP_METHODS) clear(this[method]);
     return this.configure(config);
+  },
+  with(this: FetchedApi, config) {
+    const instance = initapi(this);
+    if (!config) return instance;
+    return instance.configure(config);
   },
 });
 
@@ -76,10 +77,10 @@ const METHOD_DESCRIPTOR = {
 } as const;
 
 const DESCRIPTOR_MAP = {
-  create: METHOD_DESCRIPTOR,
-  configure: METHOD_DESCRIPTOR,
-  with: METHOD_DESCRIPTOR,
   set: METHOD_DESCRIPTOR,
+  configure: METHOD_DESCRIPTOR,
+  create: METHOD_DESCRIPTOR,
+  with: METHOD_DESCRIPTOR,
   get: METHOD_DESCRIPTOR,
   post: METHOD_DESCRIPTOR,
   put: METHOD_DESCRIPTOR,
