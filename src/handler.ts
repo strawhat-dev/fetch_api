@@ -9,7 +9,7 @@ export const fetchedMethod = async (method: string, input: FetchInput, config: F
   const res: Response = await fetch(input, init).catch(handleError(req, onError));
   if ('error' in req) return res ?? req;
   if (!res.ok) {
-    return handleError(res, onError)(Error(`Received Status: ${res.status} ${res.statusText}`));
+    return handleError(res, onError)(`${res.status} ${res.statusText}`.trim());
   }
 
   const callback = onres?.['await' as never] || onres;
@@ -30,11 +30,11 @@ export const fetchedMethod = async (method: string, input: FetchInput, config: F
 
 const handleError = (target: any, callback?: ApiOptions['onError']) => {
   typeof callback === 'function' || (callback = (ret) => ret);
-  return (error?: Error) => {
-    error ||= 'An Unknown Error Has Occured' as never;
+  return (error?: any) => {
+    error ||= 'Unknown Exception While Fetching...';
     error instanceof Error || (error = new Error(error));
     const errorTimeout = setTimeout(() => {
-      console.error('Unhandled (in fetched-api)', error!.stack || error);
+      console.error('Unhandled (in fetched-api)', error.stack || error);
     }, 10);
 
     return callback!(
