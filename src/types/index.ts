@@ -1,28 +1,16 @@
 import type {
   EmptyObject,
-  Entries,
-  JsonPrimitive,
   JsonValue,
-  Jsonifiable,
   OmitIndexSignature,
   PickIndexSignature,
   Primitive,
-  Simplify,
   UnionToIntersection,
 } from 'type-fest';
 
-export type { Entries, JsonPrimitive, Jsonifiable, Primitive };
-
 export interface NonNullish {}
-export type Maybe<T> = T | undefined;
 export type JsonObject = { [key in string]?: JsonValue };
 export type JsObject<value = unknown> = { [key: string]: value };
 export type Union<T> = IsLiteral<T> extends true ? T | (Narrow<T> & NonNullish) : T;
-
-export type Merge<T1, T2> = EnforceOptional<
-  SimpleMerge<PickIndexSignature<T1>, PickIndexSignature<T2>> &
-    SimpleMerge<OmitIndexSignature<T1>, OmitIndexSignature<T2>>
->;
 
 export type PartialRecord<K, V> = {
   [key in K as K extends PropertyKey
@@ -42,25 +30,7 @@ type Type<T> = T;
 
 type IsUnion<T> = [T] extends [UnionToIntersection<T>] ? false : true;
 
-type SimpleMerge<T1, T2> = {
-  [Key in keyof T1 as Key extends keyof T2 ? never : Key]: T1[Key];
-} & T2;
-
-type EnforceOptional<T> = Simplify<
-  { [Key in keyof T as RequiredFilter<T, Key>]: T[Key] } & {
-    [Key in keyof T as OptionalFilter<T, Key>]?: Exclude<T[Key], undefined>;
-  }
->;
-
-type RequiredFilter<T, Key extends keyof T> = Type<
-  undefined extends T[Key] ? (T[Key] extends undefined ? Key : never) : Key
->;
-
-type OptionalFilter<T, Key extends keyof T> = Type<
-  undefined extends T[Key] ? (T[Key] extends undefined ? never : Key) : never
->;
-
-export type Extends<T1, T2> = Type<
+type Extends<T1, T2> = Type<
   [T1] extends [never] ? false : [T2] extends [never] ? false : T1 extends T2 ? true : false
 >;
 

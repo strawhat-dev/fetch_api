@@ -18,7 +18,6 @@ module.exports = defineConfig({
   extends: ['plugin:@typescript-eslint/recommended', 'plugin:import/typescript', 'prettier'],
   rules: {
     '@typescript-eslint/ban-types': 'off',
-    '@typescript-eslint/ban-ts-comment': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/consistent-type-imports': 'error',
     'import/consistent-type-specifier-style': 'error',

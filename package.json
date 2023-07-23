@@ -1,11 +1,12 @@
 {
   "name": "fetched-api",
-  "description": "API for fetch api.",
+  "description": "an api for fetch api.",
+  "repository": "github:strawhat-dev/fetched-api",
   "version": "0.0.5",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
-  "types": "./dist/fetched-api.d.js",
+  "types": "./dist/fetched-api.d.ts",
   "module": "./dist/fetched-api.js",
   "exports": {
     ".": "./dist/fetched-api.js"
@@ -14,23 +15,20 @@
     "dist"
   ],
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18"
   },
   "scripts": {
-    "build": "eslint && vite build",
-    "prebuild": "cp -f dist/fetched-api.d.ts .temp.d.ts || true"
+    "build": "eslint && vite build"
   },
-  "np": {
-    "branch": "main",
-    "tests": false,
-    "cleanup": false
+  "peerDependencies": {
+    "@types/node": ">=18",
+    "type-fest": "^4.x"
   },
   "devDependencies": {
     "@rollup/plugin-terser": "^0.4.3",
-    "@types/node": "^20.4.2",
+    "@types/node": "^20.4.4",
     "@typescript-eslint/eslint-plugin": "^6.1.0",
     "@typescript-eslint/parser": "^6.1.0",
-    "deep-equal": "^2.2.2",
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-define-config": "^1.21.0",
@@ -38,9 +36,8 @@
     "eslint-plugin-import": "^2.27.5",
     "prettier": "^3.0.0",
     "terser": "npm:@swc/core",
-    "type-fest": "^4.0.0",
     "typescript": "^5.1.6",
-    "vite": "^4.4.4",
+    "vite": "^4.4.6",
     "vite-plugin-dts": "^3.3.1",
     "vite-tsconfig-paths": "^4.2.0",
     "vitest": "^0.33.0"

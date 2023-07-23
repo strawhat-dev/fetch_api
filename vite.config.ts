@@ -1,5 +1,3 @@
-import type { JsMinifyOptions } from 'terser';
-
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { defineConfig } from 'vitest/config';
@@ -19,18 +17,14 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    minify: 'terser',
     target: 'esnext',
+    minify: 'terser',
     lib: { entry: resolve(root, 'src/fetched-api.ts'), formats: ['es'] },
     rollupOptions: { output: { esModule: true, interop: 'esModule' }, treeshake: true },
   },
   plugins: [
     tsconfigPaths({ root }),
-    dts({
-      root,
-      rollupTypes: true,
-      bundledPackages: ['http', 'type-fest'],
-    }),
+    dts({ root, rollupTypes: true }),
     terser({
       ecma: 2022,
       mangle: true,
@@ -38,6 +32,6 @@ export default defineConfig({
       toplevel: true,
       compress: true,
       format: { ecma: 2022, comments: 'all' },
-    } as JsMinifyOptions as {}),
+    } as {}),
   ],
 });

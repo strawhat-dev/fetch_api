@@ -11,4 +11,5 @@ export type {
 } from '@/types/api';
 
 export { initapi };
+export { clone } from '@/utils';
 export default /* @__PURE__ */ initapi();

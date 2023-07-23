@@ -1,19 +1,23 @@
-import type { JsObject, Primitive } from '@/types';
+import type { Primitive } from 'type-fest';
+import type { JsObject } from '@/types';
 
-const structured_clone = globalThis['structuredClone'] || ((target) => target);
+import { BODY_TYPES, SELF_CONSTRUCTABLE_TYPES, STRUCTURED_CLONABLE_TYPES } from '@/constants';
 
+/**
+ * Deep clone *most* standard objects.
+ * *Does **not** handle circular references.*
+ */
 export const clone = <T>(target: T): T => {
   const t = type(target);
   if (isPrimitive(target)) return target;
   if (Array.isArray(target)) return target.map(clone) as T;
-  if (ArrayBuffer.isView(target)) return structured_clone(target);
-  if (STRUCTURED_CLONABLE_TYPES.has(t)) return structured_clone(target);
-  if (SELF_CONSTRUCTABLE_TYPES.has(t)) return new (target as any).constructor(target);
-  if (target instanceof Set) return new Set([...target].map(clone)) as T;
-  if (target instanceof Map) return new Map([...target].map(clone)) as T;
   if (target instanceof Node) return target.cloneNode(true) as T;
+  if (t === 'Set') return new Set([...(target as [])].map(clone)) as T;
+  if (t === 'Map') return new Map([...(target as [])].map(clone)) as T;
+  if (SELF_CONSTRUCTABLE_TYPES.has(t)) return new (target as any).constructor(target);
+  if (STRUCTURED_CLONABLE_TYPES.has(t) || ArrayBuffer.isView(target)) return structured_clone(target);
 
-  const copy = {};
+  const copy = typeof target === 'function' ? target.bind({}) : {};
   for (const key of Object.keys(target!)) {
     let value = (target as JsObject)[key];
     isPrimitive(value) || (value = clone(value));
@@ -32,50 +36,16 @@ export const clear = (target: object) => {
   return target;
 };
 
-export const jsonify = (target: {} | []) => {
-  if (isPrimitive(target)) return target?.toString();
-  if (target instanceof Map) return JSON.stringify(Object.fromEntries(target));
-  if (Symbol.iterator in target) return JSON.stringify([...target]);
-  return JSON.stringify(target);
-};
-
-export const isFormDataEntryValue = (value: unknown): value is FormDataEntryValue => typeof value === 'string' || value instanceof Blob;
-export const isBodyInit = (value: unknown): value is BodyInit => isFormDataEntryValue(value) || ArrayBuffer.isView(value) || BODY_TYPES.has(type(value));
-export const isPromise = (value: unknown): value is Promise<unknown> => type(value) === 'Promise';
-export const isRequest = (value: unknown): value is Request => type(value) === 'Request';
-export const isPrimitive = (value: unknown): value is Primitive => {
-  if (!value) return true;
-  const t = typeof value;
-  return t !== 'object' && t !== 'function';
-};
-
+const structured_clone = globalThis['structuredClone'] || ((target) => target);
 const type = (value: unknown) => Object.prototype.toString.call(value).slice(8, -1);
-const BODY_TYPES = new Set(['URLSearchParams', 'FormData', 'ReadableStream', 'ArrayBuffer', 'SharedArrayBuffer']);
-const SELF_CONSTRUCTABLE_TYPES = new Set(['Date', 'Error', 'Headers', 'RegExp', 'Request', 'Response', 'URL', 'URLSearchParams']);
-const STRUCTURED_CLONABLE_TYPES = new Set([
-  'ArrayBuffer',
-  'AudioData',
-  'Blob',
-  'CropTarget',
-  'CryptoKey',
-  'DOMException',
-  'DOMMatrix',
-  'DOMMatrixReadOnly',
-  'DOMPoint',
-  'DOMPointReadOnly',
-  'DOMQuad',
-  'DOMRect',
-  'DOMRectReadOnly',
-  'File',
-  'FileList',
-  'FileSystemDirectoryHandle',
-  'FileSystemFileHandle',
-  'FileSystemHandle',
-  'GPUCompilationInfo',
-  'GPUCompilationMessage',
-  'ImageBitmap',
-  'ImageData',
-  'RTCCertificate',
-  'SharedArrayBuffer',
-  'VideoFrame',
-]);
+export const jsonify = (target: any) => JSON.stringify(type(target) === 'Map' ? Object.fromEntries(target) : target?.[Symbol.iterator] ? [...target] : target);
+export const isBodyInit = (value: unknown): value is BodyInit => isFormDataEntryValue(value) || ArrayBuffer.isView(value) || BODY_TYPES.has(type(value));
+export const isPrimitive = (value: unknown): value is Primitive => !value || !(typeof value === 'object' || typeof value === 'function');
+export const isPromise = (value: unknown): value is Promise<unknown> => !!value && type(value) === 'Promise';
+export const isRequest = (value: unknown): value is Request => !!value && type(value) === 'Request';
+export const isFormDataEntryValue = (value: unknown): value is FormDataEntryValue => {
+  if (typeof value === 'string') return true;
+  if (!value) return false;
+  const t = type(value);
+  return t === 'File' || t === 'Blob';
+};
