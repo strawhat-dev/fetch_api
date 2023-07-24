@@ -2,11 +2,10 @@ import { initapi } from '@/init-api';
 
 export type {
   FetchBody,
-  FetchConfig,
   FetchHeaders,
-  FetchInit,
   FetchInput,
-  FetchRequest,
+  FetchOptions,
+  FetchQuery,
   FetchedApi,
 } from '@/types/api';
 

@@ -10,6 +10,7 @@ import type {
 export interface NonNullish {}
 export type JsonObject = { [key in string]?: JsonValue };
 export type JsObject<value = unknown> = { [key: string]: value };
+export type SetEntry<T> = T extends ReadonlySet<infer Entry> ? Entry : never;
 export type Union<T> = IsLiteral<T> extends true ? T | (Narrow<T> & NonNullish) : T;
 
 export type PartialRecord<K, V> = {

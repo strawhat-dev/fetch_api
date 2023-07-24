@@ -39,7 +39,7 @@ const structured_clone = globalThis['structuredClone'] || ((target) => target);
 const type = (value: unknown) => Object.prototype.toString.call(value).slice(8, -1);
 export const jsonify = (target: any) => JSON.stringify(type(target) === 'Map' ? Object.fromEntries(target) : target?.[Symbol.iterator] ? [...target] : target);
 export const isBodyInit = (value: unknown): value is BodyInit => isFormDataEntryValue(value) || ArrayBuffer.isView(value) || BODY_TYPES.has(type(value));
-export const isPrimitive = (value: unknown): value is Primitive => !value || !(typeof value === 'object' || typeof value === 'function');
+export const isPrimitive = (value: unknown): value is Primitive => !value || (typeof value !== 'object' && typeof value !== 'function');
 export const isPromise = (value: unknown): value is Promise<unknown> => !!value && type(value) === 'Promise';
 export const isRequest = (value: unknown): value is Request => !!value && type(value) === 'Request';
 export const isFormDataEntryValue = (value: unknown): value is FormDataEntryValue => {

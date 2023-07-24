@@ -1,11 +1,11 @@
-import type { ApiOptions, FetchConfig, FetchInput, FetchRequest } from '@/types/api';
+import type { FetchInput, FetchOptions, FetchedApi, Requested } from '@/types/api';
 
 import { isPromise } from '@/utils';
 
-export const fetchedMethod = async (method: string, input: FetchInput, config: FetchConfig) => {
-  (config as RequestInit).method ||= method.toUpperCase();
-  const { onres, onError, transform, ...init } = config as FetchConfig & RequestInit;
-  const req: FetchRequest = { ...init, input };
+export const fetchedMethod = async (method: string, input: FetchInput, options: FetchOptions) => {
+  (options as RequestInit).method ||= method.toUpperCase();
+  const { onres, onError, transform, ...init } = options as FetchOptions & RequestInit;
+  const req: Requested = { ...init, input };
   const res: Response = await fetch(input, init).catch(handleError(req, onError));
   if ('error' in req) return res ?? req;
   if (!res.ok) {
@@ -28,7 +28,7 @@ export const fetchedMethod = async (method: string, input: FetchInput, config: F
   return res;
 };
 
-const handleError = (target: any, callback?: ApiOptions['onError']) => {
+const handleError = (target: any, callback?: FetchedApi['onError']) => {
   typeof callback === 'function' || (callback = (ret) => ret);
   return (error?: any) => {
     error ||= 'Unknown Exception While Fetching...';

@@ -1,3 +1,7 @@
+import type { SetEntry } from '@/types';
+
+export type HttpMethod = SetEntry<typeof HTTP_METHODS>;
+
 const METHOD_DESCRIPTOR = {
   configurable: false,
   enumerable: false,
@@ -14,10 +18,10 @@ export const DESCRIPTOR_MAP = {
   put: METHOD_DESCRIPTOR,
   patch: METHOD_DESCRIPTOR,
   delete: METHOD_DESCRIPTOR,
-  options: METHOD_DESCRIPTOR,
-  head: METHOD_DESCRIPTOR,
   trace: METHOD_DESCRIPTOR,
   connect: METHOD_DESCRIPTOR,
+  options: METHOD_DESCRIPTOR,
+  head: METHOD_DESCRIPTOR,
 } as const;
 
 export const HTTP_METHODS = new Set([
@@ -26,18 +30,18 @@ export const HTTP_METHODS = new Set([
   'put',
   'patch',
   'delete',
-  'options',
-  'head',
   'trace',
   'connect',
+  'options',
+  'head',
 ] as const);
 
 export const BODY_TYPES = new Set([
-  'URLSearchParams',
-  'ReadableStream',
-  'FormData',
   'ArrayBuffer',
+  'FormData',
+  'ReadableStream',
   'SharedArrayBuffer',
+  'URLSearchParams',
 ]);
 
 export const SELF_CONSTRUCTABLE_TYPES = new Set([

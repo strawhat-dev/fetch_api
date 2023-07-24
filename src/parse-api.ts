@@ -1,11 +1,12 @@
+import type { HttpMethod } from '@/constants';
 import type { JsObject } from '@/types';
-import type { FetchConfig, FetchInput } from '@/types/api';
+import type { FetchInput, FetchOptions, FetchQuery } from '@/types/api';
 
 import { isBodyInit, isFormDataEntryValue, isRequest, jsonify } from '@/utils';
 
-export const parseInput = (input: FetchInput, baseURL?: string, query?: {}): FetchInput => {
+export const parseInput = (input: FetchInput, baseURL?: string, query?: FetchQuery): FetchInput => {
   if (!baseURL && !query) return input || '';
-  const searchParams = query ? `?${new URLSearchParams(query)}` : '';
+  const searchParams = query ? `?${new URLSearchParams(query as {})}` : '';
   let url = ((input as Request)?.url || `${input || ''}`).trim();
   url.startsWith('http') && url.startsWith(baseURL!) && (baseURL = '');
   if (!url || !baseURL) return parseURL(`${baseURL || url}${searchParams}`, input);
@@ -13,9 +14,10 @@ export const parseInput = (input: FetchInput, baseURL?: string, query?: {}): Fet
   return parseURL(`${baseURL}/${url}${searchParams}`, input);
 };
 
-export const parseConfig = (method: string, ...configs: FetchConfig[]) => {
+export const parseConfig = (method: HttpMethod, ...configs: FetchOptions[]): FetchOptions => {
+  const ensureProperBody = (method === 'get' || method === 'head') && { body: undefined };
   const transform = method === 'get' || method === 'post' || method === 'options';
-  const config = Object.assign({ transform }, ...configs);
+  const config = Object.assign({ transform }, ...configs, ensureProperBody);
   if (config.body == null || isBodyInit(config.body)) return config;
   const headers = ((config.headers as Headers) ??= new Headers());
   const contentType = headers.get('content-type')!;
@@ -23,19 +25,19 @@ export const parseConfig = (method: string, ...configs: FetchConfig[]) => {
   config.body = /multipart\/form-data/.test(contentType)
     ? (headers.delete('content-type'), parseFormData(config.body))
     : /application\/x-www-form-urlencoded/.test(contentType)
-    ? new URLSearchParams(config.body as JsObject<string>)
+    ? new URLSearchParams(config.body)
     : jsonify(config.body);
 
   return config;
 };
 
-export const parseHeaders = (...configs: FetchConfig[]) => {
+export const parseHeaders = (...configs: FetchOptions[]) => {
   const resolved = {} as { headers?: Headers };
   for (let { headers, appendHeaders } of configs) {
     if (headers) {
       if (!resolved.headers) resolved.headers = new Headers(headers as {});
       else {
-        headers.entries || (headers = Object.entries(headers));
+        'entries' in headers || (headers = Object.entries(headers));
         for (const header of headers as [string, string][]) {
           resolved.headers.set(...header);
         }
@@ -44,7 +46,7 @@ export const parseHeaders = (...configs: FetchConfig[]) => {
     if (appendHeaders) {
       if (!resolved.headers) resolved.headers = new Headers(appendHeaders as {});
       else {
-        appendHeaders.entries || (appendHeaders = Object.entries(appendHeaders));
+        'entries' in appendHeaders || (appendHeaders = Object.entries(appendHeaders));
         for (const header of appendHeaders as [string, string][]) {
           resolved.headers.append(...header);
         }
@@ -66,8 +68,9 @@ const parseFormData = (obj: object) => {
   if (obj == null) return fd;
   typeof obj === 'object' || (obj = { 0: obj });
   for (const key of Object.keys(obj)) {
-    const value = (obj as JsObject)[key];
-    fd.append(key, isFormDataEntryValue(value) ? value : jsonify(value));
+    let value = (obj as JsObject<string>)[key];
+    isFormDataEntryValue(value) || (value = jsonify(value));
+    fd.append(key, value);
   }
 
   return fd;
