@@ -22,22 +22,21 @@ export interface ApiOptions {
   /**
    * Body types supported natively by `fetch` are passed as is.
    * Otherwise the body will be transformed and converted to:
-   * - a `string`, from the result of passing the body to `JSON.stringify`.
-   *   `Set` and `Map` types will converted to *arrays and objects* respectively (top-level only).
+   * - `string`, resulting from converting the body with `JSON.stringify`.
    * - `URLSearchParams`, if the `Content-Type` header is set to `"application/x-www-form-urlencoded"`.
    * - `FormData`, if the `Content-Type` header is set to `"multipart/form-data"`. \
-   *   *Note: This header will be omitted during the request as it is
+   *   *Note: This header will be omitted during the request since it is
    *   {@link https://developer.mozilla.org/en-US/docs/Web/API/FormData/Using_FormData_Objects#sect4 | not meant to be set explicitly}.*
    *
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/fetch#body | Fetch API Body}
    */
   body?: FetchBody;
   /**
-   * Base url to be prefixed to the request {@link FetchRequest.input | `input`}.
+   * Base url to be prefixed to the request input.
    */
   baseURL?: string;
   /**
-   * URL search parameters to be suffixed to the request {@link FetchRequest.input | `input`}.
+   * URL search parameters to be suffixed to the request input.
    */
   query?: FetchQuery;
   /**
@@ -88,11 +87,11 @@ export interface ApiDispatch {
    */
   set(config: FetchInit): FetchedApi;
   /**
-   * Configure and update the current instance
+   * Update the defaults for the current instance
    * while merging with any previous configuration.
    * @returns the current **mutated** instance.
    */
-  configure(config: FetchInit): FetchedApi;
+  use(config: FetchInit): FetchedApi;
 }
 
 export interface RequestDispatch {

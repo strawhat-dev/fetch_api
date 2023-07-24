@@ -11,7 +11,6 @@ export const clone = <T>(target: T): T => {
   const t = type(target);
   if (isPrimitive(target)) return target;
   if (Array.isArray(target)) return target.map(clone) as T;
-  if (target instanceof Node) return target.cloneNode(true) as T;
   if (t === 'Set') return new Set([...(target as [])].map(clone)) as T;
   if (t === 'Map') return new Map([...(target as [])].map(clone)) as T;
   if (SELF_CONSTRUCTABLE_TYPES.has(t)) return new (target as any).constructor(target);

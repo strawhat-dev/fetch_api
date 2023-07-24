@@ -10,6 +10,7 @@ import { fetchedMethod } from '@/handler';
  */
 export const initapi = (defaults?: FetchInit): FetchedApi => {
   const api = getInstanceMethods() as FetchedApi;
+  defaults && Object.assign(api, clone(defaults));
   for (const method of HTTP_METHODS) {
     if (method === 'post' || method === 'put' || method === 'patch') {
       api[method] = (input, body, opts) => {
@@ -31,9 +32,7 @@ export const initapi = (defaults?: FetchInit): FetchedApi => {
     defaults?.[method] && Object.assign(api[method], clone(defaults[method]));
   }
 
-  Object.defineProperties(api, DESCRIPTOR_MAP);
-  defaults && Object.assign(api, clone(defaults));
-  return api;
+  return Object.defineProperties(api, DESCRIPTOR_MAP);
 };
 
 const getInstanceMethods = (): ApiDispatch => ({
@@ -41,14 +40,14 @@ const getInstanceMethods = (): ApiDispatch => ({
   with(this: FetchedApi, config) {
     const instance = initapi(this);
     if (!config) return instance;
-    return instance.configure(config);
+    return instance.use(config);
   },
   set(this: FetchedApi, config) {
     clear(this);
     for (const method of HTTP_METHODS) clear(this[method]);
-    return this.configure(config);
+    return this.use(config);
   },
-  configure(this: FetchedApi, config) {
+  use(this: FetchedApi, config) {
     for (const key of Object.keys(config || {}) as []) {
       let value = config[key] as never;
       isPrimitive(value) || (value = clone(value));
