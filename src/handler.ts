@@ -10,10 +10,12 @@ export const fetchedRequest = async (method: string, input: FetchInput, opts: Fe
   const res = await fetch(input, init).catch(handleError(req, onError));
 
   if ('error' in req) return res;
-  else res.statusMessage = HTTP_CODES[res.status] ?? res.statusText;
+  else if (res.status in HTTP_CODES) res.code = HTTP_CODES[res.status];
 
   if (!res.ok) {
-    return handleError(res, onError)(`${res.status} ${res.statusMessage}`.trim());
+    const { status = '', code = 'UnsuccessfulResponse' } = res;
+    const error = new Error(`${status} ${code}`.trim(), { cause: { status, code } });
+    return handleError(res, onError)(error);
   }
 
   const callback = onres?.['await' as never] || onres;
@@ -34,11 +36,11 @@ export const fetchedRequest = async (method: string, input: FetchInput, opts: Fe
 
 const handleError = (target: any, callback?: FetchedApi['onError']) => {
   typeof callback === 'function' || (callback = (ret) => ret);
-  return (error?: any) => {
-    error ||= 'Unknown Exception While Fetching...';
+  return (error?: Error) => {
+    error ||= 'Unknown Exception While Fetching...' as never;
     error instanceof Error || (error = new Error(error));
     const errorTimeout = setTimeout(() => {
-      console.error('Unhandled (in fetched-api)', error.stack || error);
+      console.error('Unhandled (in fetched-api)', error!.stack || error);
     }, 10);
 
     return callback!(
