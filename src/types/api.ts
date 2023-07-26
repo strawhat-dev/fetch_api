@@ -9,10 +9,6 @@ export type FetchQuery = JsObject<JsonPrimitive> | ConstructorParameters<typeof 
 export type FetchBody = BodyInit | Jsonifiable | Set<Jsonifiable> | Map<JsonPrimitive, Jsonifiable>;
 export type FetchConfig = FetchOptions & { [method in HttpMethod]?: Merge<FetchedApi[method], {}> };
 
-export interface Requested extends RequestInit {
-  input: FetchInput;
-}
-
 export interface FetchedApi extends FetchOptions {
   /**
    * Create and initialize a new instance.
@@ -157,6 +153,8 @@ export interface FetchOptions extends Omit<RequestInit, 'method' | 'body' | 'hea
   onError?: (reason: (Response | Requested) & { error: Error }) => any;
 }
 
+type Descriptor = { responseHasBody: boolean };
+
 /**
  * Methods that *may* have a body. \
  * i.e. `DELETE` + `TRACE` + `CONNECT` + `OPTIONS`
@@ -199,7 +197,9 @@ interface MethodOptions extends FetchOptions {
   method?: Union<HttpMethod>;
 }
 
-type Descriptor = { responseHasBody: boolean };
+interface Requested extends RequestInit {
+  input: FetchInput;
+}
 
 type HttpHeaders = Merge<
   Record<Union<KeyOf<IncomingHttpHeaders>>, string>,

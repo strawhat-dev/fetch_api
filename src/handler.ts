@@ -1,15 +1,19 @@
-import type { FetchInput, FetchOptions, FetchedApi, Requested } from '@/types/api';
+import type { FetchInput, FetchOptions, FetchedApi } from '@/types/api';
 
+import { HTTP_CODES } from '@/constants';
 import { isPromise } from '@/utils';
 
 export const fetchedRequest = async (method: string, input: FetchInput, opts: FetchOptions) => {
   (opts as RequestInit).method ||= method.toUpperCase();
   const { onres, onError, transform, ...init } = opts as FetchOptions & RequestInit;
-  const req: Requested = { ...init, input };
-  const res: Response = await fetch(input, init).catch(handleError(req, onError));
+  const req = { ...init, input };
+  const res = await fetch(input, init).catch(handleError(req, onError));
+
   if ('error' in req) return res;
+  else res.statusMessage = HTTP_CODES[res.status] ?? res.statusText;
+
   if (!res.ok) {
-    return handleError(res, onError)(`${res.status} ${res.statusText}`.trim());
+    return handleError(res, onError)(`${res.status} ${res.statusMessage}`.trim());
   }
 
   const callback = onres?.['await' as never] || onres;
