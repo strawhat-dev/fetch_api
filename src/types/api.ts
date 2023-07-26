@@ -1,13 +1,13 @@
 import type { IncomingHttpHeaders } from 'http';
 import type { Entries, JsonPrimitive, Jsonifiable, Merge } from 'type-fest';
-import type { JsObject, JsonObject, KeyOf, PartialRecord, Union } from '@/types';
+import type { JsObject, JsonObject, KeyOf, Union } from '@/types';
 import type { HttpMethod } from '@/constants';
 
 export type FetchInput = RequestInfo | URL;
-export type FetchConfig = FetchOptions & PartialRecord<HttpMethod, FetchOptions>;
 export type FetchHeaders = Partial<HttpHeaders> | Entries<HttpHeaders> | object;
 export type FetchQuery = JsObject<JsonPrimitive> | ConstructorParameters<typeof URLSearchParams>[0];
 export type FetchBody = BodyInit | Jsonifiable | Set<Jsonifiable> | Map<JsonPrimitive, Jsonifiable>;
+export type FetchConfig = FetchOptions & { [method in HttpMethod]?: Merge<FetchedApi[method], {}> };
 
 export interface Requested extends RequestInit {
   input: FetchInput;
@@ -158,7 +158,7 @@ export interface FetchOptions extends Omit<RequestInit, 'method' | 'body' | 'hea
 }
 
 /**
- * Methods that may have a body. \
+ * Methods that *may* have a body. \
  * i.e. `DELETE` + `TRACE` + `CONNECT` + `OPTIONS`
  */
 interface FetchedMethod<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
@@ -176,13 +176,13 @@ interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false 
   extends FetchOptions {
   <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
-    body: FetchBody,
-    options?: Omit<MethodOptions, 'body'> & { transform?: Transform },
+    body?: FetchBody,
+    options?: MethodOptions & { transform?: Transform },
   ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
 /**
- * Methods that should *never* have a `body` since
+ * Methods that *should never* have a `body` since
  * `fetch` will throw an error anyway if provided. \
  * i.e. `GET` + `HEAD`
  */
@@ -194,12 +194,12 @@ interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: fal
   ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
-type Descriptor = { responseHasBody: boolean };
-
 interface MethodOptions extends FetchOptions {
   /** May be used as override if using custom non-standard method. */
   method?: Union<HttpMethod>;
 }
+
+type Descriptor = { responseHasBody: boolean };
 
 type HttpHeaders = Merge<
   Record<Union<KeyOf<IncomingHttpHeaders>>, string>,

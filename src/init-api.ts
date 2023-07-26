@@ -3,28 +3,20 @@ import type { FetchConfig, FetchedApi } from '@/types/api';
 import { DESCRIPTOR_MAP, HTTP_METHODS } from '@/constants';
 import { parseConfig, parseHeaders, parseInput } from '@/parse-api';
 import { clear, clone, isPrimitive } from '@/utils';
-import { fetchedMethod } from '@/handler';
+import { fetchedRequest } from '@/handler';
 
 export const initapi: FetchedApi['create'] = (defaults) => {
   const api = getInstanceMethods() as FetchedApi;
   defaults && Object.assign(api, clone(defaults));
   for (const method of HTTP_METHODS) {
-    if (method === 'post' || method === 'put' || method === 'patch') {
-      api[method] = (input, body, opts) => {
-        ((opts ||= {}) as FetchConfig).body = body;
-        const headers = parseHeaders(api, api[method], opts);
-        const { baseURL, query, ...rest } = parseConfig(method, api, api[method], opts, headers);
-        const url = parseInput(input, baseURL, query);
-        return fetchedMethod(method, url, rest);
-      };
-    } else {
-      api[method] = (input, opts) => {
-        const headers = parseHeaders(api, api[method], opts || {});
-        const { baseURL, query, ...rest } = parseConfig(method, api, api[method], opts!, headers);
-        const url = parseInput(input, baseURL, query);
-        return fetchedMethod(method, url, rest);
-      };
-    }
+    const hasBody = method === 'post' || method === 'put' || method === 'patch';
+    api[method] = (input, ...args) => {
+      const opts = args.pop() || {};
+      hasBody && ((opts as FetchConfig).body ??= args.pop() ?? '');
+      const headers = parseHeaders(api, api[method], opts);
+      const { baseURL, query, ...rest } = parseConfig(method, api, api[method], opts, headers);
+      return fetchedRequest(method, parseInput(input, baseURL, query), rest);
+    };
 
     defaults?.[method] && Object.assign(api[method], clone(defaults[method]));
   }

@@ -4,23 +4,21 @@ import type { IncomingHttpHeaders } from 'http';
 import type { EmptyObject, Entries, JsonPrimitive, JsonValue, Jsonifiable, Merge, OmitIndexSignature, PickIndexSignature, Primitive, UnionToIntersection } from 'type-fest';
 
 /**
- * Deep clone *most* standard objects.
- * *Does **not** handle circular references.*
+ * Deep clone most standard objects. Does not handle
+ * non-enumerable properties or circular references.
  */
 export declare const clone: <T>(target: T) => T;
 
 declare const _default: FetchedApi;
 export default _default;
 
-declare type Descriptor = {
-  responseHasBody: boolean;
-};
+declare type Descriptor = { responseHasBody: boolean };
 
 declare type Extends<T1, T2> = Type<[T1] extends [never] ? false : [T2] extends [never] ? false : T1 extends T2 ? true : false>;
 
 export declare type FetchBody = BodyInit | Jsonifiable | Set<Jsonifiable> | Map<JsonPrimitive, Jsonifiable>;
 
-declare type FetchConfig = FetchOptions & PartialRecord<HttpMethod, FetchOptions>;
+declare type FetchConfig = FetchOptions & { [method in HttpMethod]?: Merge<FetchedApi[method], {}> };
 
 export declare interface FetchedApi extends FetchOptions {
   /**
@@ -59,18 +57,14 @@ export declare interface FetchedApi extends FetchOptions {
    *
    * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/GET | MDN Reference}
    */
-  get: FetchedMethodWithoutBody<{
-    responseHasBody: true;
-  }>;
+  get: FetchedMethodWithoutBody<{ responseHasBody: true }>;
   /**
    * The `POST` method submits an entity to the specified resource,
    * often causing a change in state or side effects on the server.
    *
    * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST | MDN Reference}
    */
-  post: FetchedMethodWithBody<{
-    responseHasBody: true;
-  }>;
+  post: FetchedMethodWithBody<{ responseHasBody: true }>;
   /**
    * The `PUT` method replaces all current representations
    * of the target resource with the request payload.
@@ -109,74 +103,32 @@ export declare interface FetchedApi extends FetchOptions {
    *
    * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/OPTIONS | MDN Reference}
    */
-  options: FetchedMethod<{
-    responseHasBody: true;
-  }>;
+  options: FetchedMethod<{ responseHasBody: true }>;
 }
 
 /**
- * Methods that may have a body. \
+ * Methods that *may* have a body. \
  * i.e. `DELETE` + `TRACE` + `CONNECT` + `OPTIONS`
  */
-declare interface FetchedMethod<
-  T extends Descriptor = {
-    responseHasBody: false;
-  },
-> extends FetchOptions {
-  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
-    input: FetchInput,
-    options?: MethodOptions & {
-      transform?: Transform;
-    },
-  ): Promise<
-    (Transform extends false ? Response : Data) & {
-      error?: Error;
-    }
-  >;
+declare interface FetchedMethod<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
+  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(input: FetchInput, options?: MethodOptions & { transform?: Transform }): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
 /**
  * Methods that *should* have a body. \
  * i.e. `POST` + `PUT` + `PATCH`
  */
-declare interface FetchedMethodWithBody<
-  T extends Descriptor = {
-    responseHasBody: false;
-  },
-> extends FetchOptions {
-  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
-    input: FetchInput,
-    body: FetchBody,
-    options?: Omit<MethodOptions, 'body'> & {
-      transform?: Transform;
-    },
-  ): Promise<
-    (Transform extends false ? Response : Data) & {
-      error?: Error;
-    }
-  >;
+declare interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
+  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(input: FetchInput, body?: FetchBody, options?: MethodOptions & { transform?: Transform }): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
 /**
- * Methods that should *never* have a `body` since
+ * Methods that *should never* have a `body` since
  * `fetch` will throw an error anyway if provided. \
  * i.e. `GET` + `HEAD`
  */
-declare interface FetchedMethodWithoutBody<
-  T extends Descriptor = {
-    responseHasBody: false;
-  },
-> extends Omit<FetchOptions, 'body'> {
-  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
-    input: FetchInput,
-    options?: Omit<MethodOptions, 'body'> & {
-      transform?: Transform;
-    },
-  ): Promise<
-    (Transform extends false ? Response : Data) & {
-      error?: Error;
-    }
-  >;
+declare interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: false }> extends Omit<FetchOptions, 'body'> {
+  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(input: FetchInput, options?: Omit<MethodOptions, 'body'> & { transform?: Transform }): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
 export declare type FetchHeaders = Partial<HttpHeaders> | Entries<HttpHeaders> | object;
@@ -232,20 +184,12 @@ export declare interface FetchOptions extends Omit<RequestInit, 'method' | 'body
    * *Asynchronous callbacks that return a `Promise` may be awaited and resolved
    * if the callback is provided under the sub-property `onres.await` instead.*
    */
-  onres?:
-    | ((res: Response, req: Requested) => unknown)
-    | {
-        await: (res: Response, req: Requested) => Promise<unknown>;
-      };
+  onres?: ((res: Response, req: Requested) => unknown) | { await: (res: Response, req: Requested) => Promise<unknown> };
   /**
    * Define a default callback to handle any errors during
    * the fetch request and non-sucessful responses (i.e. `!res.ok`).
    */
-  onError?: (
-    reason: (Response | Requested) & {
-      error: Error;
-    },
-  ) => any;
+  onError?: (reason: (Response | Requested) & { error: Error }) => any;
 }
 
 export declare type FetchQuery = JsObject<JsonPrimitive> | ConstructorParameters<typeof URLSearchParams>[0];
@@ -264,13 +208,9 @@ declare type IsLiteral<T> = Type<string extends T ? false : number extends T ? f
 
 declare type IsUnion<T> = [T] extends [UnionToIntersection<T>] ? false : true;
 
-declare type JsObject<value = unknown> = {
-  [key: string]: value;
-};
+declare type JsObject<value = unknown> = { [key: string]: value };
 
-declare type JsonObject = {
-  [key in string]?: JsonValue;
-};
+declare type JsonObject = { [key in string]?: JsonValue };
 
 declare type KeyOf<T, Explicit = OmitIndexSignature<Readonly<UnionToIntersection<T>>>, Key = keyof (Explicit extends EmptyObject ? T : Explicit)> = Key extends keyof (IsUnion<T> extends true ? Explicit : T) ? `${Exclude<Key, symbol>}` : never;
 
@@ -282,10 +222,6 @@ declare interface MethodOptions extends FetchOptions {
 declare type Narrow<T> = Type<T extends string ? string : T extends number ? number : T extends boolean ? boolean : T extends undefined ? undefined : T extends null ? null : T extends readonly (infer Item)[] ? Narrow<Item>[] : T extends ReadonlySet<infer Item> ? Set<Narrow<Item>> : T extends ReadonlyMap<infer K, infer V> ? Map<Narrow<K>, Narrow<V>> : T extends Promise<infer Resolved> ? Promise<Narrow<Resolved>> : T extends JsObject<infer Values> ? JsObject<Narrow<Values>> : T extends object ? object : {}>;
 
 declare interface NonNullish {}
-
-declare type PartialRecord<K, V> = {
-  [key in K as K extends PropertyKey ? K : K extends Exclude<Primitive, symbol> ? `${K}` : never]?: V;
-};
 
 declare interface Requested extends RequestInit {
   input: FetchInput;

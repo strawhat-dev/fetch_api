@@ -2,12 +2,12 @@ import type { FetchInput, FetchOptions, FetchedApi, Requested } from '@/types/ap
 
 import { isPromise } from '@/utils';
 
-export const fetchedMethod = async (method: string, input: FetchInput, options: FetchOptions) => {
-  (options as RequestInit).method ||= method.toUpperCase();
-  const { onres, onError, transform, ...init } = options as FetchOptions & RequestInit;
+export const fetchedRequest = async (method: string, input: FetchInput, opts: FetchOptions) => {
+  (opts as RequestInit).method ||= method.toUpperCase();
+  const { onres, onError, transform, ...init } = opts as FetchOptions & RequestInit;
   const req: Requested = { ...init, input };
   const res: Response = await fetch(input, init).catch(handleError(req, onError));
-  if ('error' in req) return res ?? req;
+  if ('error' in req) return res;
   if (!res.ok) {
     return handleError(res, onError)(`${res.status} ${res.statusText}`.trim());
   }
@@ -22,7 +22,7 @@ export const fetchedMethod = async (method: string, input: FetchInput, options: 
 
   // prettier-ignore
   if (transform && res.body && !res.bodyUsed) {
-    return res.clone().json().catch(() => res.text().catch(handleError(res, onError)));
+    return res.clone().json().catch(() => res.text());
   }
 
   return res;
@@ -38,11 +38,11 @@ const handleError = (target: any, callback?: FetchedApi['onError']) => {
     }, 10);
 
     return callback!(
-      Object.defineProperty(target || {}, 'error', {
+      Object.defineProperty(target, 'error', {
         enumerable: true,
         configurable: true,
         get: () => (clearTimeout(errorTimeout), error),
-      }),
+      }) ?? target,
     );
   };
 };

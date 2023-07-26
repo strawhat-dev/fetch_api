@@ -4,8 +4,8 @@ import type { JsObject } from '@/types';
 import { BODY_TYPES, SELF_CONSTRUCTABLE_TYPES, STRUCTURED_CLONABLE_TYPES } from '@/constants';
 
 /**
- * Deep clone *most* standard objects.
- * *Does **not** handle circular references.*
+ * Deep clone most standard objects. Does not handle
+ * non-enumerable properties or circular references.
  */
 export const clone = <T>(target: T): T => {
   const t = type(target);
