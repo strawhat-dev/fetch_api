@@ -5,17 +5,15 @@
   "version": "0.1.3",
   "license": "MIT",
   "type": "module",
-  "files": [
-    "dist"
-  ],
   "sideEffects": false,
-  "engines": {
-    "node": ">=18"
-  },
   "types": "./dist/fetched-api.d.ts",
   "module": "./dist/fetched-api.js",
   "exports": {
     ".": "./dist/fetched-api.js"
+  },
+  "files": ["dist"],
+  "engines": {
+    "node": ">=18"
   },
   "scripts": {
     "build": "eslint && vite build"
@@ -46,9 +44,7 @@
       "vite-plugin-dts>@microsoft/api-extractor": "latest"
     },
     "peerDependencyRules": {
-      "allowAny": [
-        "terser"
-      ]
+      "allowAny": ["terser"]
     }
   }
 }
