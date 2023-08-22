@@ -1,8 +1,0 @@
-{
-  "printWidth": 100,
-  "singleQuote": true,
-  "overrides": [
-    { "files": "src/utils.ts", "options": { "printWidth": 175 } },
-    { "files": "dist/fetched-api.d.ts", "options": { "printWidth": 1000 } }
-  ]
-}

@@ -3,13 +3,11 @@ import type { JsObject } from '@/types';
 
 import { BODY_TYPES, SELF_CONSTRUCTABLE_TYPES, STRUCTURED_CLONABLE_TYPES } from '@/constants';
 
-/**
- * Deep clone most standard objects. Does not handle
- * non-enumerable properties or circular references.
- */
+/** Deep clone most standard objects. Does not handle non-enumerable properties or circular references. */
 export const clone = <T>(target: T): T => {
   const t = type(target);
   if (isPrimitive(target)) return target;
+  if (isNode(target)) return target.cloneNode(true) as T;
   if (Array.isArray(target)) return target.map(clone) as T;
   if (t === 'Set') return new Set([...(target as [])].map(clone)) as T;
   if (t === 'Map') return new Map([...(target as [])].map(clone)) as T;
@@ -38,6 +36,7 @@ export const clear = (target: object) => {
 const structured_clone = globalThis['structuredClone'] || ((target) => target);
 const type = (value: unknown) => Object.prototype.toString.call(value).slice(8, -1);
 export const jsonify = (target: any) => JSON.stringify(type(target) === 'Map' ? Object.fromEntries(target) : target?.[Symbol.iterator] ? [...target] : target);
+export const isNode = (value: unknown): value is Node => typeof globalThis['Node'] === 'function' && typeof globalThis['Node'].prototype === 'object' && value instanceof globalThis['Node'];
 export const isBodyInit = (value: unknown): value is BodyInit => isFormDataEntryValue(value) || ArrayBuffer.isView(value) || BODY_TYPES.has(type(value));
 export const isPrimitive = (value: unknown): value is Primitive => !value || (typeof value !== 'object' && typeof value !== 'function');
 export const isPromise = (value: unknown): value is Promise<unknown> => !!value && type(value) === 'Promise';

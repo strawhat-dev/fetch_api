@@ -15,7 +15,7 @@ module.exports = defineConfig({
     'import/parsers': { '@typescript-eslint/parser': ['.ts'] },
     'import/resolver': { 'import/resolver': { typescript: { alwaysTryTypes: true } } },
   },
-  extends: ['plugin:@typescript-eslint/recommended', 'plugin:import/typescript', 'prettier'],
+  extends: ['plugin:@typescript-eslint/recommended', 'plugin:import/typescript'],
   rules: {
     '@typescript-eslint/ban-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',

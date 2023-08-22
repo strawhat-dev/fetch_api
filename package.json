@@ -5,42 +5,32 @@
   "version": "0.1.2",
   "license": "MIT",
   "type": "module",
+  "files": ["dist"],
   "sideEffects": false,
+  "engines": { "node": ">=18" },
   "types": "./dist/fetched-api.d.ts",
   "module": "./dist/fetched-api.js",
-  "exports": {
-    ".": "./dist/fetched-api.js"
-  },
-  "files": [
-    "dist"
-  ],
-  "engines": {
-    "node": ">=18"
-  },
-  "scripts": {
-    "build": "eslint && vite build"
-  },
+  "exports": { ".": "./dist/fetched-api.js" },
+  "scripts": { "build": "eslint && vite build" },
   "peerDependencies": {
     "@types/node": ">=18",
     "type-fest": "^4.x"
   },
   "devDependencies": {
     "@rollup/plugin-terser": "^0.4.3",
-    "@types/node": "^20.4.5",
-    "@typescript-eslint/eslint-plugin": "^6.2.0",
-    "@typescript-eslint/parser": "^6.2.0",
-    "eslint": "^8.45.0",
-    "eslint-config-prettier": "^8.8.0",
-    "eslint-define-config": "^1.21.0",
-    "eslint-import-resolver-typescript": "^3.5.5",
-    "eslint-plugin-import": "^2.27.5",
-    "prettier": "^3.0.0",
+    "@types/node": "^20.5.2",
+    "@typescript-eslint/eslint-plugin": "^6.4.1",
+    "@typescript-eslint/parser": "^6.4.1",
+    "eslint": "^8.47.0",
+    "eslint-define-config": "^1.23.0",
+    "eslint-import-resolver-typescript": "^3.6.0",
+    "eslint-plugin-import": "^2.28.1",
     "terser": "npm:@swc/core",
     "typescript": "^5.1.6",
-    "vite": "^4.4.7",
-    "vite-plugin-dts": "^3.3.1",
+    "vite": "^4.4.9",
+    "vite-plugin-dts": "^3.5.2",
     "vite-tsconfig-paths": "^4.2.0",
-    "vitest": "^0.33.0"
+    "vitest": "^0.34.2"
   },
   "pnpm": {
     "overrides": {
@@ -48,9 +38,7 @@
       "vite-plugin-dts>@microsoft/api-extractor": "latest"
     },
     "peerDependencyRules": {
-      "allowAny": [
-        "terser"
-      ]
+      "allowAny": ["terser"]
     }
   }
 }

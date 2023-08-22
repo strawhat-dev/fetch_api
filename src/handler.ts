@@ -28,7 +28,9 @@ export const fetchedRequest = async (method: string, input: FetchInput, opts: Fe
 
   // prettier-ignore
   if (transform && res.body && !res.bodyUsed) {
-    return res.clone().json().catch(() => res.text());
+    return res.json().catch((error: Error) => (
+      error instanceof SyntaxError ? error.message.match(/"(.*)" is not valid JSON$/)?.pop() : handleError(res, onError)(error)
+    ));
   }
 
   return res;
@@ -48,7 +50,7 @@ const handleError = (target: any, callback?: FetchedApi['onError']) => {
         enumerable: true,
         configurable: true,
         get: () => (clearTimeout(errorTimeout), error),
-      }) ?? target,
+      }) ?? target
     );
   };
 };
