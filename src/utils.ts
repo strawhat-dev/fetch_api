@@ -34,8 +34,8 @@ export const clear = (target: object) => {
 };
 
 const structured_clone = globalThis['structuredClone'] || ((target) => target);
-const type = (value: unknown) => Object.prototype.toString.call(value).slice(8, -1);
-export const jsonify = (target: any) => JSON.stringify(type(target) === 'Map' ? Object.fromEntries(target) : target?.[Symbol.iterator] ? [...target] : target);
+export const type = (value: unknown) => Object.prototype.toString.call(value).slice(8, -1);
+export const jsonify: typeof JSON.stringify = (value, ...args) => JSON.stringify(type(value) === 'Map' ? Object.fromEntries(value) : value?.[Symbol.iterator] ? [...value] : value, ...args as []);
 export const isNode = (value: unknown): value is Node => typeof globalThis['Node'] === 'function' && typeof globalThis['Node'].prototype === 'object' && value instanceof globalThis['Node'];
 export const isBodyInit = (value: unknown): value is BodyInit => isFormDataEntryValue(value) || ArrayBuffer.isView(value) || BODY_TYPES.has(type(value));
 export const isPrimitive = (value: unknown): value is Primitive => !value || (typeof value !== 'object' && typeof value !== 'function');

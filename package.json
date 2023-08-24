@@ -11,14 +11,13 @@
   "exports": {
     ".": "./dist/fetched-api.js"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "build": "eslint && vite build"
+    "build": "eslint && vite build",
+    "build-dts": "eslint && vite build -- dts"
   },
   "peerDependencies": {
     "@types/node": ">=18",
@@ -26,7 +25,7 @@
   },
   "devDependencies": {
     "@rollup/plugin-terser": "^0.4.3",
-    "@types/node": "^20.5.2",
+    "@types/node": "^20.5.4",
     "@typescript-eslint/eslint-plugin": "^6.4.1",
     "@typescript-eslint/parser": "^6.4.1",
     "eslint": "^8.47.0",
@@ -46,9 +45,7 @@
       "vite-plugin-dts>@microsoft/api-extractor": "latest"
     },
     "peerDependencyRules": {
-      "allowAny": [
-        "terser"
-      ]
+      "allowAny": ["terser"]
     }
   }
 }

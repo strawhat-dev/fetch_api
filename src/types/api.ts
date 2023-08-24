@@ -1,5 +1,5 @@
 import type { IncomingHttpHeaders } from 'http';
-import type { Entries, JsonPrimitive, Jsonifiable, Merge } from 'type-fest';
+import type { Entries, Jsonifiable, JsonPrimitive, Merge } from 'type-fest';
 import type { JsObject, JsonObject, KeyOf, Union } from '@/types';
 import type { HttpMethod } from '@/constants';
 
@@ -9,6 +9,7 @@ export type FetchQuery = JsObject<JsonPrimitive> | ConstructorParameters<typeof 
 export type FetchBody = BodyInit | Jsonifiable | Set<Jsonifiable> | Map<JsonPrimitive, Jsonifiable>;
 export type FetchConfig = FetchOptions & { [method in HttpMethod]?: Merge<FetchedApi[method], {}> };
 
+/** A configurable api instance. */
 export interface FetchedApi extends FetchOptions {
   /**
    * Create and initialize a new instance.
@@ -70,7 +71,7 @@ export interface FetchedApi extends FetchOptions {
   /**
    * The `DELETE` method deletes the specified resource.
    *
-   *{@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/DELETE | MDN Reference}
+   * {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/DELETE | MDN Reference}
    */
   delete: FetchedMethod;
   /**
@@ -95,6 +96,7 @@ export interface FetchedApi extends FetchOptions {
   options: FetchedMethod<{ responseHasBody: true }>;
 }
 
+/** Available options configurable per instance, method, or call. */
 export interface FetchOptions extends Omit<RequestInit, 'method' | 'body' | 'headers'> {
   /**
    * Transform the default return type for fetch requests to the
@@ -170,8 +172,7 @@ interface FetchedMethod<T extends Descriptor = { responseHasBody: false }> exten
  * Methods that *should* have a body. \
  * i.e. `POST` + `PUT` + `PATCH`
  */
-interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false }>
-  extends FetchOptions {
+interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
   <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
     body?: FetchBody,
@@ -184,8 +185,7 @@ interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false 
  * `fetch` will throw an error anyway if provided. \
  * i.e. `GET` + `HEAD`
  */
-interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: false }>
-  extends Omit<FetchOptions, 'body'> {
+interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: false }> extends Omit<FetchOptions, 'body'> {
   <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
     options?: Omit<MethodOptions, 'body'> & { transform?: Transform },

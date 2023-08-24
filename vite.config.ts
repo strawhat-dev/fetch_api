@@ -5,6 +5,7 @@ import dts from 'vite-plugin-dts';
 import terser from '@rollup/plugin-terser';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
+const rollupTypes = process.argv.at(-1) === 'dts';
 const root = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
@@ -19,12 +20,13 @@ export default defineConfig({
     outDir: 'dist',
     target: 'esnext',
     minify: 'terser',
+    emptyOutDir: rollupTypes,
     lib: { entry: resolve(root, 'src/fetched-api.ts'), formats: ['es'] },
     rollupOptions: { output: { esModule: true, interop: 'esModule' }, treeshake: true },
   },
   plugins: [
     tsconfigPaths({ root }),
-    dts({ root, rollupTypes: true }),
+    rollupTypes && dts({ root, rollupTypes }),
     terser({
       ecma: 2022,
       mangle: true,

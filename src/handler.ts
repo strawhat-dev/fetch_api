@@ -1,4 +1,4 @@
-import type { FetchInput, FetchOptions, FetchedApi } from '@/types/api';
+import type { FetchedApi, FetchInput, FetchOptions } from '@/types/api';
 
 import { HTTP_CODES } from '@/constants';
 import { isPromise } from '@/utils';
@@ -10,8 +10,7 @@ export const fetchedRequest = async (method: string, input: FetchInput, opts: Fe
   const res = await fetch(input, init).catch(handleError(req, onError));
 
   if ('error' in req) return res;
-  else if (res.status in HTTP_CODES) res.code = HTTP_CODES[res.status];
-
+  if (res.status in HTTP_CODES) res.code = HTTP_CODES[res.status];
   if (!res.ok) {
     const { status = '', code = 'UnsuccessfulResponse' } = res;
     const error = new Error(`${status} ${code}`.trim(), { cause: { status, code } });
@@ -28,9 +27,11 @@ export const fetchedRequest = async (method: string, input: FetchInput, opts: Fe
 
   // prettier-ignore
   if (transform && res.body && !res.bodyUsed) {
-    return res.json().catch((error: Error) => (
-      error instanceof SyntaxError ? error.message.match(/"(.*)" is not valid JSON$/)?.pop() : handleError(res, onError)(error)
-    ));
+    return res.json().catch((error: Error) =>
+      error instanceof SyntaxError
+        ? error.message.match(/"(.*)" is not valid JSON$/)?.pop()
+        : handleError(res, onError)(error)
+    );
   }
 
   return res;
