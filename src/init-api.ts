@@ -13,7 +13,7 @@ export const initapi: FetchedApi['create'] = (defaults) => {
     api[method] = (input, ...args) => {
       let opts = args.pop() as FetchConfig;
       hasBody && (args.length ? (opts.body = args.pop()!) : (opts = { body: opts as {} }));
-      const headers = parseHeaders(api, api[method], opts);
+      const headers = parseHeaders(api, api[method], opts ?? {});
       const { baseURL, query, ...rest } = parseConfig(method, api, api[method], opts, headers);
       return fetchedRequest(method, parseInput(input, baseURL, query), rest);
     };
