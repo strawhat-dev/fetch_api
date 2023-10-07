@@ -1,7 +1,7 @@
 import type { FetchedApi, FetchInput, FetchOptions } from '@/types/api';
 
-import { isPromise } from '@/utils';
 import { HTTP_CODES } from '@/constants';
+import { isobject, isPromise } from '@/utils';
 
 export const fetchedRequest = async (method: string, input: FetchInput, opts: FetchOptions) => {
   (opts as RequestInit).method ||= method.toUpperCase();
@@ -19,10 +19,11 @@ export const fetchedRequest = async (method: string, input: FetchInput, opts: Fe
 
   const callback = onres?.['await' as never] || onres;
   if (typeof callback === 'function') {
-    const ret = callback(res, req);
+    const sym = Symbol(res.code ?? res.status);
+    const ret = callback(res, req, sym);
     const unawaited = isPromise(ret) && !('await' in onres!);
-    const resolved = unawaited ? undefined : await ret;
-    if (typeof resolved !== 'undefined') return resolved;
+    const resolved = !unawaited && await ret;
+    if (isobject(resolved) && sym in resolved) return resolved;
   }
 
   // prettier-ignore

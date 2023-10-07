@@ -7,6 +7,8 @@ export const type = (x: unknown) => {
   return x.constructor?.name ?? Object.prototype.toString.call(x).slice(8, -1);
 };
 
+export const isobject = (x: unknown): x is object => !isPrimitive(x);
+
 export const isPrimitive = (x: unknown): x is primitive => (
   !x || (typeof x !== 'object' && typeof x !== 'function')
 );

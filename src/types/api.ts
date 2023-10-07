@@ -9,29 +9,59 @@ export type FetchQuery = JsObject<tf.JsonPrimitive> | ConstructorParameters<type
 export type FetchBody = BodyInit | tf.Jsonifiable | Set<tf.Jsonifiable> | Map<tf.JsonPrimitive, tf.Jsonifiable>;
 export type FetchConfig = FetchOptions & { [method in HttpMethod]?: tf.Merge<FetchedApi[method], {}> };
 
-/** A configurable api instance. */
+/**
+ * Simple and lightweight configurable request client with cross-support
+ * for both browsers and node.js *(versions >=18)*, providing many axios-like
+ * conveniences such as automatic transforms and an alternative intuitive api,
+ * all while using `fetch-api` natively without any other external dependencies.
+ *
+ * ```js
+ * import api from 'fetched-api';
+ *
+ * // configurable with enhanced type support
+ * api.set({ baseURL: 'https://pokeapi.co/api/v2/pokemon' });
+ * // ...direct assignment alternative
+ * api.baseURL = 'https://pokeapi.co/api/v2/pokemon';
+ * // ...per method configuration supported as well
+ * api.get.baseURL = 'https://pokeapi.co/api/v2/pokemon';
+ *
+ * // all options, including those from native fetch-api requests, may still be provided on request
+ * const requestConfig = { headers: { accept: 'application/json' }, onError: console.error };
+ * const data = await api.get('/pikachu');
+ * ```
+ */
 export interface FetchedApi extends FetchOptions {
   /**
-   * Create and initialize a new instance.
-   * @returns the **new** instance.
+   * Create and initialize a new instance with
+   * optionally provided default configuration.
+   * - Essentially equivalent to `initapi` named export:
+   * ```js
+   * // alternative initial usage...
+   * import { initapi } from 'fetched-api';
+   * const api = initapi({ transform: false });
+   * ```
+   * @returns the *new* instance
    */
   create(config?: FetchConfig): FetchedApi;
   /**
-   * Create a new instance with the provided defaults
-   * while inheriting from any previous configuration.
-   * @returns the **new** instance.
+   * Create and initialize a new instance,
+   * merging with any previous configuration.
+   * - **non-mutating** version of {@link FetchedApi.use}
+   * @returns the *new* instance
    */
-  with(config?: FetchConfig): FetchedApi;
+  with(config: FetchConfig): FetchedApi;
   /**
    * Set the defaults for the current instance,
    * disregarding any previous configuration.
-   * @returns the current **mutated** instance.
+   * - **mutates** the current instance
+   * @returns the *updated* instance
    */
   set(config: FetchConfig): FetchedApi;
   /**
-   * Update the defaults for the current instance
-   * while merging with any previous configuration.
-   * @returns the current **mutated** instance.
+   * Update the defaults for the current instance,
+   * merging with any previous configuration.
+   * - **mutating** version of {@link FetchedApi.with}
+   * @returns the *updated* instance
    */
   use(config: FetchConfig): FetchedApi;
   /**
@@ -141,13 +171,13 @@ export interface FetchOptions extends Omit<RequestInit, 'method' | 'body' | 'hea
   appendHeaders?: FetchHeaders;
   /**
    * Define a default callback for resolved requests with sucessful responses (i.e. `res.ok`),
-   * which may be used to perform some background task (if callback is `void`/`async`)
-   * or intercept the returned response (if anything other than `undefined` is returned). \
-   * *Asynchronous callbacks that return a `Promise` may be awaited and resolved
-   * if the callback is provided under the sub-property `onres.await` instead.*
+   * which may be used to perform some background task, or handle & intercept the returned response (by
+   * returning an object with the provided `symbol`, where the associated value will be returned instead).
+   * Asynchronous callbacks that return a `Promise` may be awaited and resolved if the callback is provided
+   * under the sub-property `onres.await`.
    */
   // prettier-ignore
-  onres?: ((res: Response, req: Requested) => unknown) | { await: (res: Response, req: Requested) => Promise<unknown> };
+  onres?: ((res: Response, req: Requested, id: symbol) => unknown) | { await: (res: Response, req: Requested, id: symbol) => Promise<unknown> };
   /**
    * Define a default callback to handle any errors during
    * the fetch request and non-sucessful responses (i.e. `!res.ok`).
@@ -172,9 +202,7 @@ interface FetchedMethod<T extends Descriptor = { responseHasBody: false }> exten
  * Methods that *should* have a body. \
  * i.e. `POST` + `PUT` + `PATCH`
  */
-interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false }>
-  extends FetchOptions
-{
+interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
   <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
     body?: FetchBody,
@@ -187,9 +215,7 @@ interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false 
  * `fetch` will throw an error anyway if provided. \
  * i.e. `GET` + `HEAD`
  */
-interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: false }>
-  extends Omit<FetchOptions, 'body'>
-{
+interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: false }> extends Omit<FetchOptions, 'body'> {
   <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
     options?: Omit<MethodOptions, 'body'> & { transform?: Transform },

@@ -3,35 +3,16 @@ import type { Spreadable } from 'type-fest/source/spread';
 
 export type primitive = tf.Primitive;
 export type value = primitive | object;
+export type Maybe<T> = T | undefined;
 export type Fn<T = any> = (...args: any[]) => T;
 export type SetEntry<T> = T extends ReadonlySet<infer Entry> ? Entry : never;
 export type Composite<T> = tf.OmitIndexSignature<tf.UnionToIntersection<Spread<T>>>;
+export type JsObject<T extends value = any> = { [key in Exclude<PropertyKey, symbol> as `${key}`]: T };
 export type JsonObject = { [key in string]?: tf.JsonValue };
-export type JsObject<T extends value = any> = {
-  [key in Exclude<PropertyKey, symbol> as `${key}`]: T;
-};
-
-export type KeyOf<
-  T,
-  resolved = keyof (Composite<T> extends tf.EmptyObject ? T : Composite<T>),
-> = resolved extends keyof T ?
-  (`${Exclude<resolved, symbol>}` extends keyof T ? `${Exclude<resolved, symbol>}` : never) :
-  `${Exclude<keyof T, symbol>}`;
-
-export type ValueOf<
-  T extends object,
-  source = Composite<T>,
-> = source[keyof source];
-
-export type Union<T> = [T] extends [never] ? unknown :
-  T extends never[] ? any[] :
-  T extends tf.EmptyObject ? JsObject :
-  IsLiteral<T> extends true ? (T | (Narrow<T> & _)) :
-  T;
-
-export type Spread<T1, T2 = T1> = T1 extends Spreadable ?
-  tf.Spread<T1, T2 extends Spreadable ? T2 : _> :
-  _;
+export type KeyOf<T, resolved = keyof (Composite<T> extends tf.EmptyObject ? T : Composite<T>)> = resolved extends keyof T ? (`${Exclude<resolved, symbol>}` extends keyof T ? `${Exclude<resolved, symbol>}` : never) : `${Exclude<keyof T, symbol>}`;
+export type ValueOf<T extends object, source = Composite<T>> = source[keyof source];
+export type Union<T> = [T] extends [never] ? unknown : T extends never[] ? any[] : T extends tf.EmptyObject ? JsObject : IsLiteral<T> extends true ? (T | (Narrow<T> & _)) : T;
+export type Spread<T1, T2 = T1> = T1 extends Spreadable ? tf.Spread<T1, T2 extends Spreadable ? T2 : _> : _;
 
 interface _ {}
 
