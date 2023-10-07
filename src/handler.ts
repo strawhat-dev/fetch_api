@@ -19,11 +19,11 @@ export const fetchedRequest = async (method: string, input: FetchInput, opts: Fe
 
   const callback = onres?.['await' as never] || onres;
   if (typeof callback === 'function') {
-    const sym = Symbol(res.code ?? res.status);
-    const ret = callback(res, req, sym);
+    const id = Symbol(res.code ?? res.status);
+    const ret = callback(res, req, id);
     const unawaited = isPromise(ret) && !('await' in onres!);
     const resolved = !unawaited && await ret;
-    if (isobject(resolved) && sym in resolved) return resolved;
+    if (isobject(resolved) && id in resolved) return resolved[id];
   }
 
   // prettier-ignore
