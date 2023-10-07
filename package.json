@@ -2,7 +2,7 @@
   "name": "fetched-api",
   "description": "an api for fetch api.",
   "repository": "github:strawhat-dev/fetched-api",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
