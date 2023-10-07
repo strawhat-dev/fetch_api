@@ -3,6 +3,7 @@ import type { Spreadable } from 'type-fest/source/spread';
 
 export type primitive = tf.Primitive;
 export type value = primitive | object;
+export type Fn<T = any> = (...args: any[]) => T;
 export type SetEntry<T> = T extends ReadonlySet<infer Entry> ? Entry : never;
 export type Composite<T> = tf.OmitIndexSignature<tf.UnionToIntersection<Spread<T>>>;
 export type JsonObject = { [key in string]?: tf.JsonValue };
@@ -34,15 +35,13 @@ export type Spread<T1, T2 = T1> = T1 extends Spreadable ?
 
 interface _ {}
 
-type Func<T = any> = (...args: any[]) => T;
-
 type Extends<T1, T2> = [T1] extends [never] ? false :
   [T2] extends [never] ? false :
   T1 extends T2 ? true :
   false;
 
 type Narrow<T> = T extends readonly (infer Item)[] ? Narrow<Item>[] :
-  T extends (..._: readonly any[]) => infer Return ? Func<Narrow<Return>> :
+  T extends (..._: readonly any[]) => infer Return ? Fn<Narrow<Return>> :
   T extends ReadonlyMap<infer K, infer V> ? Map<Narrow<K>, Narrow<V>> :
   T extends Promise<infer Resolved> ? Promise<Narrow<Resolved>> :
   T extends JsObject<infer Values> ? JsObject<Narrow<Values>> :

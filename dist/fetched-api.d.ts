@@ -134,7 +134,9 @@ declare interface FetchedMethod<
  * i.e. `POST` + `PUT` + `PATCH`
  */
 declare interface FetchedMethodWithBody<
-  T extends Descriptor = { responseHasBody: false },
+  T extends Descriptor = {
+    responseHasBody: false;
+  },
 > extends FetchOptions {
   <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
@@ -225,7 +227,7 @@ export declare type FetchQuery =
   | JsObject<tf.JsonPrimitive>
   | ConstructorParameters<typeof URLSearchParams>[0];
 
-declare type Func<T = any> = (...args: any[]) => T;
+declare type Fn<T = any> = (...args: any[]) => T;
 
 declare const HTTP_METHODS: Set<
   'get' | 'post' | 'put' | 'patch' | 'delete' | 'trace' | 'connect' | 'options' | 'head'
@@ -314,7 +316,7 @@ declare interface MethodOptions extends FetchOptions {
 }
 
 declare type Narrow<T> = T extends readonly (infer Item)[] ? Narrow<Item>[] :
-  T extends (..._: readonly any[]) => infer Return ? Func<Narrow<Return>> :
+  T extends (..._: readonly any[]) => infer Return ? Fn<Narrow<Return>> :
   T extends ReadonlyMap<infer K, infer V> ? Map<Narrow<K>, Narrow<V>> :
   T extends Promise<infer Resolved> ? Promise<Narrow<Resolved>> :
   T extends JsObject<infer Values> ? JsObject<Narrow<Values>> :
@@ -350,7 +352,7 @@ declare type Union<T> = [T] extends [never] ? unknown :
 
 declare type value = primitive | object;
 
+export {};
+
 declare interface _ {
 }
-
-export {};
