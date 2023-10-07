@@ -26,20 +26,21 @@
     "type-fest": "^4.x"
   },
   "devDependencies": {
-    "@rollup/plugin-terser": "^0.4.3",
-    "@types/node": "^20.5.6",
-    "@typescript-eslint/eslint-plugin": "^6.4.1",
-    "@typescript-eslint/parser": "^6.4.1",
-    "eslint": "^8.48.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@types/node": "^20.8.3",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "eslint": "^8.51.0",
     "eslint-define-config": "^1.23.0",
-    "eslint-import-resolver-typescript": "^3.6.0",
+    "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "^2.28.1",
     "terser": "npm:@swc/core",
+    "type-fest": "^4.4.0",
     "typescript": "^5.2.2",
-    "vite": "^4.4.9",
-    "vite-plugin-dts": "^3.5.2",
-    "vite-tsconfig-paths": "^4.2.0",
-    "vitest": "^0.34.3"
+    "vite": "^4.4.11",
+    "vite-plugin-dts": "^3.6.0",
+    "vite-tsconfig-paths": "^4.2.1",
+    "vitest": "^0.34.6"
   },
   "pnpm": {
     "overrides": {

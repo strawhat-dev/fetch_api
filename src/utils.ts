@@ -1,49 +1,96 @@
-import type { Primitive } from 'type-fest';
-import type { JsObject } from '@/types';
-
+import type { Entries } from 'type-fest';
+import type { Composite, JsObject, primitive } from '@/types';
 import { BODY_TYPES, SELF_CONSTRUCTABLE_TYPES, STRUCTURED_CLONABLE_TYPES } from '@/constants';
 
-/** Deep clone most standard objects. Does not handle non-enumerable properties or circular references. */
-export const clone = <T>(target: T): T => {
-  const t = type(target);
-  if (isPrimitive(target)) return target;
-  if (isNode(target)) return target.cloneNode(true) as T;
-  if (Array.isArray(target)) return target.map(clone) as T;
-  if (t === 'Set') return new Set([...(target as [])].map(clone)) as T;
-  if (t === 'Map') return new Map([...(target as [])].map(clone)) as T;
-  if (SELF_CONSTRUCTABLE_TYPES.has(t)) return new (target as any).constructor(target);
-  if (STRUCTURED_CLONABLE_TYPES.has(t) || ArrayBuffer.isView(target)) return structured_clone(target);
-
-  const copy = typeof target === 'function' ? target.bind({}) : {};
-  for (const key of Object.keys(target!)) {
-    let value = (target as JsObject)[key];
-    isPrimitive(value) || (value = clone(value));
-    (copy as JsObject)[key] = value;
-  }
-
-  return copy as T;
+export const type = (x: unknown) => {
+  if (x == null || Number.isNaN(x)) return 'Nullish';
+  return x.constructor?.name ?? Object.prototype.toString.call(x).slice(8, -1);
 };
 
-export const clear = (target: object) => {
-  if (!target) return {};
-  for (const key of Object.keys(target)) {
-    delete (target as JsObject)[key];
+export const isPrimitive = (x: unknown): x is primitive => (
+  !x || (typeof x !== 'object' && typeof x !== 'function')
+);
+
+export const isPromise = (x: unknown): x is Promise<any> => (
+  !!x && type(x) === 'Promise'
+);
+
+export const isRequest = (x: unknown): x is Request => (
+  !!x && type(x) === 'Request'
+);
+
+export const isNode = (x: unknown): x is Node => (
+  !!(x as Node)?.ELEMENT_NODE && typeof (x as Node).cloneNode === 'function'
+);
+
+export const isBodyInit = (x: unknown): x is BodyInit => (
+  isFormDataEntryValue(x) || ArrayBuffer.isView(x) || BODY_TYPES.has(type(x))
+);
+
+export const isFormDataEntryValue = (x: unknown): x is FormDataEntryValue => {
+  if (x == null) return false;
+  const t = type(x);
+  return t === 'String' || t === 'File' || t === 'Blob';
+};
+
+export const jsonify = (x: any) => (
+  JSON.stringify(
+    type(x) === 'Map' ?
+      Object.fromEntries(x) :
+      x?.[Symbol.iterator] ?
+      [...x] :
+      x
+  )
+);
+
+export const entries = <T extends JsObject>(obj: T) => {
+  if (!obj) return [] as never;
+  const ret: any[] = Object.keys(obj);
+  const len = ret.length;
+  for (let i = 0; i < len; ++i) ret[i] = [ret[i], obj[ret[i]]];
+  return ret as Entries<Composite<T>>;
+};
+
+export const clone = ((source: any) => {
+  if (skipClone(source)) return source;
+  if (isNode(source)) return source.cloneNode(true);
+  if (Array.isArray(source)) return clone_array(source, new Array(source.length));
+
+  const t = type(source);
+  const Constructor = source.constructor;
+  if (t === 'Set' || t === 'Map') return new Constructor(clone_array([...source]));
+  if (SELF_CONSTRUCTABLE_TYPES.has(t)) return new Constructor(source);
+  if (STRUCTURED_CLONABLE_TYPES.has(t) || ArrayBuffer.isView(source)) {
+    return structured_clone(source);
+  }
+
+  const target: JsObject = {};
+  for (const key of Object.keys(source)) {
+    let value = source[key];
+    skipClone(value) || (value = clone(value));
+    target[key] = value;
   }
 
   return target;
-};
+}) as <T>(source: T) => T;
 
-const structured_clone = globalThis['structuredClone'] || ((target) => target);
-export const type = (value: unknown) => Object.prototype.toString.call(value).slice(8, -1);
-export const jsonify: typeof JSON.stringify = (value, ...args) => JSON.stringify(type(value) === 'Map' ? Object.fromEntries(value) : value?.[Symbol.iterator] ? [...value] : value, ...args as []);
-export const isNode = (value: unknown): value is Node => typeof globalThis['Node'] === 'function' && typeof globalThis['Node'].prototype === 'object' && value instanceof globalThis['Node'];
-export const isBodyInit = (value: unknown): value is BodyInit => isFormDataEntryValue(value) || ArrayBuffer.isView(value) || BODY_TYPES.has(type(value));
-export const isPrimitive = (value: unknown): value is Primitive => !value || (typeof value !== 'object' && typeof value !== 'function');
-export const isPromise = (value: unknown): value is Promise<unknown> => !!value && type(value) === 'Promise';
-export const isRequest = (value: unknown): value is Request => !!value && type(value) === 'Request';
-export const isFormDataEntryValue = (value: unknown): value is FormDataEntryValue => {
-  if (typeof value === 'string') return true;
-  if (!value) return false;
-  const t = type(value);
-  return t === 'File' || t === 'Blob';
+export const clear = ((obj) => {
+  if (!obj) return {};
+  for (const key of Object.keys(obj) as []) delete obj[key];
+  return obj;
+}) as typeof clone;
+
+const skipClone = (x: unknown) => !x || typeof x !== 'object';
+
+const structured_clone = globalThis['structuredClone'] || ((x) => x);
+
+const clone_array = (source: any[], target = source) => {
+  const len = source.length;
+  for (let i = 0; i < len; ++i) {
+    let cur = source[i];
+    skipClone(cur) || (cur = clone(cur));
+    target[i] = cur;
+  }
+
+  return target;
 };

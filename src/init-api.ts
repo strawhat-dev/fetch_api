@@ -6,9 +6,9 @@ import { clear, clone, isPrimitive } from '@/utils';
 import { fetchedRequest } from '@/handler';
 
 export const initapi: FetchedApi['create'] = (defaults) => {
-  const api = getInstanceMethods() as FetchedApi;
-  defaults && Object.assign(api, clone(defaults));
+  const api = assign(getInstanceMethods(), defaults && clone(defaults)) as FetchedApi;
   for (const method of HTTP_METHODS) {
+    const config = defaults?.[method];
     const hasBody = method === 'post' || method === 'put' || method === 'patch';
     api[method] = (input, ...args) => {
       let opts = args.pop() as FetchConfig;
@@ -18,12 +18,13 @@ export const initapi: FetchedApi['create'] = (defaults) => {
       return fetchedRequest(method, parseInput(input, baseURL, query), rest);
     };
 
-    defaults?.[method] && Object.assign(api[method], clone(defaults[method]));
+    assign(api[method], config && clone(config));
   }
 
-  return Object.defineProperties(api, DESCRIPTOR_MAP);
+  return defineProperties(api, DESCRIPTOR_MAP);
 };
 
+const { assign, defineProperties, keys } = Object;
 const getInstanceMethods = (): Partial<FetchedApi> => ({
   create: initapi,
   with(this, config) {
@@ -37,11 +38,11 @@ const getInstanceMethods = (): Partial<FetchedApi> => ({
     return this.use!(config);
   },
   use(this, config) {
-    for (const key of Object.keys(config || {}) as []) {
+    for (const key of keys(config || {}) as []) {
       let value = config[key];
       isPrimitive(value) || (value = clone(value));
       const isMethod = typeof this[key] === 'function';
-      isMethod ? Object.assign(this[key], value) : (this[key] = value);
+      isMethod ? assign(this[key], value) : (this[key] = value);
     }
 
     return this as FetchedApi;

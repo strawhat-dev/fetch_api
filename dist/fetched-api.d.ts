@@ -1,23 +1,33 @@
 /// <reference types="node" />
+
+import type * as tf from 'type-fest';
 import type { IncomingHttpHeaders } from 'http';
-import type { EmptyObject, Entries, Jsonifiable, JsonPrimitive, JsonValue, Merge, OmitIndexSignature, PickIndexSignature, Primitive, UnionToIntersection } from 'type-fest';
+import type { Spreadable } from 'type-fest/source/spread';
 
-declare const _default: FetchedApi;
+export declare const clone: <T>(source: T) => T;
 
-export default _default;
+declare type Composite<T> = tf.OmitIndexSignature<tf.UnionToIntersection<Spread<T>>>;
 
-/** Deep clone most standard objects. Does not handle non-enumerable properties or circular references. */
-export declare const clone: <T>(target: T) => T;
+declare const api: FetchedApi;
 
-declare type Composite<T> = OmitIndexSignature<UnionToIntersection<Readonly<T>>>;
+export default api;
 
 declare type Descriptor = { responseHasBody: boolean };
 
-declare type Extends<T1, T2> = [T1] extends [never] ? false : [T2] extends [never] ? false : T1 extends T2 ? true : false;
+declare type Extends<T1, T2> = [T1] extends [never] ? false :
+  [T2] extends [never] ? false :
+  T1 extends T2 ? true :
+  false;
 
-export declare type FetchBody = BodyInit | Jsonifiable | Set<Jsonifiable> | Map<JsonPrimitive, Jsonifiable>;
+export declare type FetchBody =
+  | BodyInit
+  | tf.Jsonifiable
+  | Set<tf.Jsonifiable>
+  | Map<tf.JsonPrimitive, tf.Jsonifiable>;
 
-declare type FetchConfig = FetchOptions & { [method in HttpMethod]?: Merge<FetchedApi[method], {}> };
+declare type FetchConfig =
+  & FetchOptions
+  & { [method in HttpMethod]?: tf.Merge<FetchedApi[method], {}> };
 
 /** A configurable api instance. */
 export declare interface FetchedApi extends FetchOptions {
@@ -110,7 +120,9 @@ export declare interface FetchedApi extends FetchOptions {
  * Methods that *may* have a body. \
  * i.e. `DELETE` + `TRACE` + `CONNECT` + `OPTIONS`
  */
-declare interface FetchedMethod<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
+declare interface FetchedMethod<
+  T extends Descriptor = { responseHasBody: false },
+> extends FetchOptions {
   <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
     options?: MethodOptions & { transform?: Transform },
@@ -121,7 +133,9 @@ declare interface FetchedMethod<T extends Descriptor = { responseHasBody: false 
  * Methods that *should* have a body. \
  * i.e. `POST` + `PUT` + `PATCH`
  */
-declare interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
+declare interface FetchedMethodWithBody<
+  T extends Descriptor = { responseHasBody: false },
+> extends FetchOptions {
   <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
     body?: FetchBody,
@@ -134,14 +148,16 @@ declare interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody
  * `fetch` will throw an error anyway if provided. \
  * i.e. `GET` + `HEAD`
  */
-declare interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: false }> extends Omit<FetchOptions, 'body'> {
+declare interface FetchedMethodWithoutBody<
+  T extends Descriptor = { responseHasBody: false },
+> extends Omit<FetchOptions, 'body'> {
   <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
     options?: Omit<MethodOptions, 'body'> & { transform?: Transform },
   ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
-export declare type FetchHeaders = Partial<HttpHeaders> | Entries<HttpHeaders> | object;
+export declare type FetchHeaders = Partial<HttpHeaders> | tf.Entries<HttpHeaders> | object;
 
 export declare type FetchInput = RequestInfo | URL;
 
@@ -195,7 +211,9 @@ export declare interface FetchOptions extends Omit<RequestInit, 'method' | 'body
    * *Asynchronous callbacks that return a `Promise` may be awaited and resolved
    * if the callback is provided under the sub-property `onres.await` instead.*
    */
-  onres?: ((res: Response, req: Requested) => unknown) | { await: (res: Response, req: Requested) => Promise<unknown> };
+  onres?: ((res: Response, req: Requested) => unknown) | {
+    await: (res: Response, req: Requested) => Promise<unknown>;
+  };
   /**
    * Define a default callback to handle any errors during
    * the fetch request and non-sucessful responses (i.e. `!res.ok`).
@@ -203,36 +221,114 @@ export declare interface FetchOptions extends Omit<RequestInit, 'method' | 'body
   onError?: (reason: (Response | Requested) & { error: Error }) => any;
 }
 
-export declare type FetchQuery = JsObject<JsonPrimitive> | ConstructorParameters<typeof URLSearchParams>[0];
+export declare type FetchQuery =
+  | JsObject<tf.JsonPrimitive>
+  | ConstructorParameters<typeof URLSearchParams>[0];
 
-declare const HTTP_METHODS: Set<'get' | 'post' | 'put' | 'patch' | 'delete' | 'trace' | 'connect' | 'options' | 'head'>;
+declare type Func<T = any> = (...args: any[]) => T;
 
-declare type HttpContentType = 'application/EDI-X12' | 'application/EDIFACT' | 'application/java-archive' | 'application/javascript' | 'application/json' | 'application/ld+json' | 'application/octet-stream' | 'application/ogg' | 'application/pdf' | 'application/x-shockwave-flash' | 'application/x-www-form-urlencoded' | 'application/xhtml+xml' | 'application/xml' | 'application/zip' | 'audio/mpeg' | 'audio/vnd.rn-realaudio' | 'audio/x-ms-wma' | 'audio/x-wav' | 'image/gif' | 'image/jpeg' | 'image/png' | 'image/svg+xml' | 'image/tiff' | 'image/vnd.djvu' | 'image/x-icon' | 'multipart/alternative' | 'multipart/form-data' | 'multipart/mixed' | 'multipart/related' | 'text/css' | 'text/csv' | 'text/html' | 'text/javascript' | 'text/plain' | 'text/xml' | 'video/mp4' | 'video/mpeg' | 'video/quicktime' | 'video/webm' | 'video/x-flv' | 'video/x-ms-wmv' | 'video/x-msvideo';
+declare const HTTP_METHODS: Set<
+  'get' | 'post' | 'put' | 'patch' | 'delete' | 'trace' | 'connect' | 'options' | 'head'
+>;
 
-declare type HttpHeaders = Merge<Record<Union<KeyOf<IncomingHttpHeaders>>, string>, Record<'accept' | 'content-type', Union<HttpContentType>>>;
+declare type HttpContentType =
+  | 'application/EDI-X12'
+  | 'application/EDIFACT'
+  | 'application/java-archive'
+  | 'application/javascript'
+  | 'application/json'
+  | 'application/ld+json'
+  | 'application/octet-stream'
+  | 'application/ogg'
+  | 'application/pdf'
+  | 'application/x-shockwave-flash'
+  | 'application/x-www-form-urlencoded'
+  | 'application/xhtml+xml'
+  | 'application/xml'
+  | 'application/zip'
+  | 'audio/mpeg'
+  | 'audio/vnd.rn-realaudio'
+  | 'audio/x-ms-wma'
+  | 'audio/x-wav'
+  | 'image/gif'
+  | 'image/jpeg'
+  | 'image/png'
+  | 'image/svg+xml'
+  | 'image/tiff'
+  | 'image/vnd.djvu'
+  | 'image/x-icon'
+  | 'multipart/alternative'
+  | 'multipart/form-data'
+  | 'multipart/mixed'
+  | 'multipart/related'
+  | 'text/css'
+  | 'text/csv'
+  | 'text/html'
+  | 'text/javascript'
+  | 'text/plain'
+  | 'text/xml'
+  | 'video/mp4'
+  | 'video/mpeg'
+  | 'video/quicktime'
+  | 'video/webm'
+  | 'video/x-flv'
+  | 'video/x-ms-wmv'
+  | 'video/x-msvideo';
+
+declare type HttpHeaders = tf.Merge<
+  Record<Union<KeyOf<IncomingHttpHeaders>>, string>,
+  Record<'accept' | 'content-type', Union<HttpContentType>>
+>;
 
 declare type HttpMethod = SetEntry<typeof HTTP_METHODS>;
 
 export declare const initapi: FetchedApi['create'];
 
-declare type IsLiteral<T> = [T] extends [never] ? false : string extends T ? false : number extends T ? false : boolean extends T ? false : object extends T ? false : Function extends T ? false : T extends readonly (infer Item)[] ? IsLiteral<Item> : T extends JsObject ? Extends<PickIndexSignature<T>, EmptyObject> : Extends<T, Primitive>;
+declare type IsLiteral<T> = [T] extends [never] ? false :
+  boolean extends T ? false :
+  bigint extends T ? false :
+  number extends T ? false :
+  string extends T ? false :
+  object extends T ? false :
+  T extends readonly (infer Item)[] ? IsLiteral<Item> :
+  T extends JsObject ? Extends<tf.PickIndexSignature<T>, tf.EmptyObject> :
+  Function extends T ? false :
+  Extends<T, primitive>;
 
-declare type JsObject<value = unknown> = { [key: string]: value };
+declare type JsObject<T extends value = any> = {
+  [key in Exclude<PropertyKey, symbol> as `${key}`]: T;
+};
 
-export declare const jsonify: typeof JSON.stringify;
+export declare const jsonify: (x: any) => string;
 
-declare type JsonObject = { [key in string]?: JsonValue };
+declare type JsonObject = { [key in string]?: tf.JsonValue };
 
-declare type KeyOf<T, Explicit = Composite<T>, Key = keyof (Explicit extends EmptyObject ? T : Explicit)> = Key extends keyof T ? (`${Exclude<Key, symbol>}` extends keyof T ? `${Exclude<Key, symbol>}` : never) : [Key] extends [never] ? string : never;
+declare type KeyOf<T, resolved = keyof (Composite<T> extends tf.EmptyObject ? T : Composite<T>)> =
+  resolved extends keyof T ?
+    (`${Exclude<resolved, symbol>}` extends keyof T ? `${Exclude<resolved, symbol>}` : never) :
+    `${Exclude<keyof T, symbol>}`;
 
 declare interface MethodOptions extends FetchOptions {
   /** May be used as override if using custom non-standard method. */
   method?: Union<HttpMethod>;
 }
 
-declare type Narrow<T> = T extends string ? string : T extends number ? number : T extends boolean ? boolean : T extends undefined ? undefined : T extends null ? null : T extends readonly (infer Item)[] ? Narrow<Item>[] : T extends ReadonlySet<infer Item> ? Set<Narrow<Item>> : T extends ReadonlyMap<infer K, infer V> ? Map<Narrow<K>, Narrow<V>> : T extends Promise<infer Resolved> ? Promise<Narrow<Resolved>> : T extends JsObject<infer Values> ? JsObject<Narrow<Values>> : T extends object ? object : {};
+declare type Narrow<T> = T extends readonly (infer Item)[] ? Narrow<Item>[] :
+  T extends (..._: readonly any[]) => infer Return ? Func<Narrow<Return>> :
+  T extends ReadonlyMap<infer K, infer V> ? Map<Narrow<K>, Narrow<V>> :
+  T extends Promise<infer Resolved> ? Promise<Narrow<Resolved>> :
+  T extends JsObject<infer Values> ? JsObject<Narrow<Values>> :
+  T extends ReadonlySet<infer Item> ? Set<Narrow<Item>> :
+  T extends undefined ? undefined :
+  T extends boolean ? boolean :
+  T extends bigint ? bigint :
+  T extends number ? number :
+  T extends string ? string :
+  T extends object ? object :
+  T extends null ? null :
+  _;
 
-declare interface NonNullish {}
+declare type primitive = tf.Primitive;
 
 declare interface Requested extends RequestInit {
   input: FetchInput;
@@ -240,8 +336,21 @@ declare interface Requested extends RequestInit {
 
 declare type SetEntry<T> = T extends ReadonlySet<infer Entry> ? Entry : never;
 
-export declare const type: (value: unknown) => string;
+declare type Spread<T1, T2 = T1> = T1 extends Spreadable ?
+  tf.Spread<T1, T2 extends Spreadable ? T2 : _> :
+  _;
 
-declare type Union<T> = IsLiteral<T> extends true ? (T | (Narrow<T> & NonNullish)) : [T] extends [never] ? unknown : T;
+export declare const type: (x: unknown) => string;
+
+declare type Union<T> = [T] extends [never] ? unknown :
+  T extends never[] ? any[] :
+  T extends tf.EmptyObject ? JsObject :
+  IsLiteral<T> extends true ? (T | (Narrow<T> & _)) :
+  T;
+
+declare type value = primitive | object;
+
+declare interface _ {
+}
 
 export {};

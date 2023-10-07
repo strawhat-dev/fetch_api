@@ -1,7 +1,7 @@
 import type { FetchedApi, FetchInput, FetchOptions } from '@/types/api';
 
-import { HTTP_CODES } from '@/constants';
 import { isPromise } from '@/utils';
+import { HTTP_CODES } from '@/constants';
 
 export const fetchedRequest = async (method: string, input: FetchInput, opts: FetchOptions) => {
   (opts as RequestInit).method ||= method.toUpperCase();

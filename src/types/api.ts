@@ -1,13 +1,13 @@
+import type * as tf from 'type-fest';
 import type { IncomingHttpHeaders } from 'http';
-import type { Entries, Jsonifiable, JsonPrimitive, Merge } from 'type-fest';
 import type { JsObject, JsonObject, KeyOf, Union } from '@/types';
 import type { HttpMethod } from '@/constants';
 
 export type FetchInput = RequestInfo | URL;
-export type FetchHeaders = Partial<HttpHeaders> | Entries<HttpHeaders> | object;
-export type FetchQuery = JsObject<JsonPrimitive> | ConstructorParameters<typeof URLSearchParams>[0];
-export type FetchBody = BodyInit | Jsonifiable | Set<Jsonifiable> | Map<JsonPrimitive, Jsonifiable>;
-export type FetchConfig = FetchOptions & { [method in HttpMethod]?: Merge<FetchedApi[method], {}> };
+export type FetchHeaders = Partial<HttpHeaders> | tf.Entries<HttpHeaders> | object;
+export type FetchQuery = JsObject<tf.JsonPrimitive> | ConstructorParameters<typeof URLSearchParams>[0];
+export type FetchBody = BodyInit | tf.Jsonifiable | Set<tf.Jsonifiable> | Map<tf.JsonPrimitive, tf.Jsonifiable>;
+export type FetchConfig = FetchOptions & { [method in HttpMethod]?: tf.Merge<FetchedApi[method], {}> };
 
 /** A configurable api instance. */
 export interface FetchedApi extends FetchOptions {
@@ -172,7 +172,9 @@ interface FetchedMethod<T extends Descriptor = { responseHasBody: false }> exten
  * Methods that *should* have a body. \
  * i.e. `POST` + `PUT` + `PATCH`
  */
-interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
+interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false }>
+  extends FetchOptions
+{
   <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
     body?: FetchBody,
@@ -185,7 +187,9 @@ interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false 
  * `fetch` will throw an error anyway if provided. \
  * i.e. `GET` + `HEAD`
  */
-interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: false }> extends Omit<FetchOptions, 'body'> {
+interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: false }>
+  extends Omit<FetchOptions, 'body'>
+{
   <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
     options?: Omit<MethodOptions, 'body'> & { transform?: Transform },
@@ -201,7 +205,7 @@ interface Requested extends RequestInit {
   input: FetchInput;
 }
 
-type HttpHeaders = Merge<
+type HttpHeaders = tf.Merge<
   Record<Union<KeyOf<IncomingHttpHeaders>>, string>,
   Record<'accept' | 'content-type', Union<HttpContentType>>
 >;
