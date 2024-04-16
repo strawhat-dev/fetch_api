@@ -154,7 +154,7 @@ export interface FetchOptions extends Omit<RequestInit, 'method' | 'body' | 'hea
   /**
    * URL search parameters to be suffixed to the request input.
    */
-  query?: FetchQuery;
+  params?: FetchQuery;
   /**
    * Headers to be merged and constructed into a new `Headers`
    * object, with any previous headers being overwritten using the

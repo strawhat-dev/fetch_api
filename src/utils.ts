@@ -1,15 +1,18 @@
 import type { Entries } from 'type-fest';
-import type { Composite, JsObject, primitive } from '@/types';
+import type { Composite, JsObject, Primitive } from '@/types';
 import { BODY_TYPES, SELF_CONSTRUCTABLE_TYPES, STRUCTURED_CLONABLE_TYPES } from '@/constants';
+
+const { isArray } = Array;
+const { keys, prototype, fromEntries } = Object;
 
 export const type = (x: unknown) => {
   if (x == null || Number.isNaN(x)) return 'Nullish';
-  return x.constructor?.name ?? Object.prototype.toString.call(x).slice(8, -1);
+  return x.constructor?.name ?? prototype.toString.call(x).slice(8, -1);
 };
 
-export const isobject = (x: unknown): x is object => !isPrimitive(x);
+export const isObject = (x: unknown): x is object => !isPrimitive(x);
 
-export const isPrimitive = (x: unknown): x is primitive => (
+export const isPrimitive = (x: unknown): x is Primitive => (
   !x || (typeof x !== 'object' && typeof x !== 'function')
 );
 
@@ -38,7 +41,7 @@ export const isFormDataEntryValue = (x: unknown): x is FormDataEntryValue => {
 export const jsonify = (x: any) => (
   JSON.stringify(
     type(x) === 'Map' ?
-      Object.fromEntries(x) :
+      fromEntries(x) :
       x?.[Symbol.iterator] ?
       [...x] :
       x
@@ -47,7 +50,7 @@ export const jsonify = (x: any) => (
 
 export const entries = <T extends JsObject>(obj: T) => {
   if (!obj) return [] as never;
-  const ret: any[] = Object.keys(obj);
+  const ret: any[] = keys(obj);
   const len = ret.length;
   for (let i = 0; i < len; ++i) ret[i] = [ret[i], obj[ret[i]]];
   return ret as Entries<Composite<T>>;
@@ -56,7 +59,7 @@ export const entries = <T extends JsObject>(obj: T) => {
 export const clone = ((source: any) => {
   if (skipClone(source)) return source;
   if (isNode(source)) return source.cloneNode(true);
-  if (Array.isArray(source)) return clone_array(source, new Array(source.length));
+  if (isArray(source)) return clone_array(source, new Array(source.length));
 
   const t = type(source);
   const Constructor = source.constructor;
@@ -67,7 +70,7 @@ export const clone = ((source: any) => {
   }
 
   const target: JsObject = {};
-  for (const key of Object.keys(source)) {
+  for (const key of keys(source)) {
     let value = source[key];
     skipClone(value) || (value = clone(value));
     target[key] = value;
@@ -78,7 +81,7 @@ export const clone = ((source: any) => {
 
 export const clear = ((obj) => {
   if (!obj) return {};
-  for (const key of Object.keys(obj) as []) delete obj[key];
+  for (const key of keys(obj) as []) delete obj[key];
   return obj;
 }) as typeof clone;
 

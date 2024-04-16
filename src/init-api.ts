@@ -10,13 +10,13 @@ export const initapi: FetchedApi['create'] = (defaults) => {
   for (const method of HTTP_METHODS) {
     const config = defaults?.[method];
     const hasBody = method === 'post' || method === 'put' || method === 'patch';
-    api[method] = define((input, ...args) => {
+    api[method] = define(method, (input, ...args) => {
       let opts = args.pop() as FetchConfig;
       hasBody && (args.length ? (opts.body = args.pop()!) : (opts = { body: opts as {} }));
       const headers = parseHeaders(api, api[method], opts ?? {});
-      const { baseURL, query, ...rest } = parseConfig(method, api, api[method], opts, headers);
-      return fetchedRequest(method, parseInput(input, baseURL, query), rest);
-    }, method);
+      const { baseURL, params, ...rest } = parseConfig(method, api, api[method], opts, headers);
+      return fetchedRequest(method, parseInput(input, baseURL, params), rest);
+    });
 
     assign(api[method], clone(config));
   }
@@ -25,9 +25,9 @@ export const initapi: FetchedApi['create'] = (defaults) => {
 };
 
 const { keys, assign, defineProperty, defineProperties } = Object;
-const define = <T>(fn: T, name: string) => defineProperty(fn, 'name', { value: name }) as T;
+const define = <T>(name: string, fn: T) => defineProperty(fn, 'name', { value: name }) as T;
 const getInstanceMethods = (): Partial<FetchedApi> => ({
-  create: define(initapi, 'create'),
+  create: define('create', initapi),
   with(this, config) {
     const instance = initapi(this);
     if (!config) return instance;

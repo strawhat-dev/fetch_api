@@ -1,8 +1,10 @@
 /// <reference types="node" />
 
 import type * as tf from 'type-fest';
-import type { IncomingHttpHeaders } from 'http';
-import type { Spreadable } from 'type-fest/source/spread';
+import { IncomingHttpHeaders } from 'http';
+import { Spreadable } from 'type-fest/source/spread';
+
+declare interface _ {}
 
 export declare const clone: <T>(source: T) => T;
 
@@ -141,27 +143,16 @@ export declare interface FetchedApi extends FetchOptions {
  * Methods that *may* have a body. \
  * i.e. `DELETE` + `TRACE` + `CONNECT` + `OPTIONS`
  */
-declare interface FetchedMethod<
-  T extends Descriptor = { responseHasBody: false },
-> extends FetchOptions {
-  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
-    input: FetchInput,
-    options?: MethodOptions & { transform?: Transform },
-  ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
+declare interface FetchedMethod<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
+  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(input: FetchInput, options?: MethodOptions & { transform?: Transform }): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
 /**
  * Methods that *should* have a body. \
  * i.e. `POST` + `PUT` + `PATCH`
  */
-declare interface FetchedMethodWithBody<
-  T extends Descriptor = { responseHasBody: false },
-> extends FetchOptions {
-  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
-    input: FetchInput,
-    body?: FetchBody,
-    options?: MethodOptions & { transform?: Transform },
-  ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
+declare interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
+  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(input: FetchInput, body?: FetchBody, options?: MethodOptions & { transform?: Transform }): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
 /**
@@ -169,13 +160,8 @@ declare interface FetchedMethodWithBody<
  * `fetch` will throw an error anyway if provided. \
  * i.e. `GET` + `HEAD`
  */
-declare interface FetchedMethodWithoutBody<
-  T extends Descriptor = { responseHasBody: false },
-> extends Omit<FetchOptions, 'body'> {
-  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
-    input: FetchInput,
-    options?: Omit<MethodOptions, 'body'> & { transform?: Transform },
-  ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
+declare interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: false }> extends Omit<FetchOptions, 'body'> {
+  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(input: FetchInput, options?: Omit<MethodOptions, 'body'> & { transform?: Transform }): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
 export declare type FetchHeaders = Partial<HttpHeaders> | tf.Entries<HttpHeaders> | object;
@@ -210,7 +196,7 @@ export declare interface FetchOptions extends Omit<RequestInit, 'method' | 'body
   /**
    * URL search parameters to be suffixed to the request input.
    */
-  query?: FetchQuery;
+  params?: FetchQuery;
   /**
    * Headers to be merged and constructed into a new `Headers`
    * object, with any previous headers being overwritten using the
@@ -254,15 +240,15 @@ declare type HttpMethod = SetEntry<typeof HTTP_METHODS>;
 
 export declare const initapi: FetchedApi['create'];
 
-declare type IsLiteral<T> = [T] extends [never] ? false : boolean extends T ? false : bigint extends T ? false : number extends T ? false : string extends T ? false : object extends T ? false : T extends readonly (infer Item)[] ? IsLiteral<Item> : T extends JsObject ? Extends<tf.PickIndexSignature<T>, tf.EmptyObject> : Function extends T ? false : Extends<T, primitive>;
+declare type IsLiteral<T> = [T] extends [never] ? false : boolean extends T ? false : bigint extends T ? false : number extends T ? false : string extends T ? false : object extends T ? false : T extends readonly (infer Item)[] ? IsLiteral<Item> : T extends JsObject ? Extends<tf.PickIndexSignature<T>, tf.EmptyObject> : Function extends T ? false : Extends<T, tf.Primitive>;
 
-declare type JsObject<T extends value = any> = { [key in Exclude<PropertyKey, symbol> as `${key}`]: T };
+declare type JsObject<T extends Value = any> = { [key in Exclude<PropertyKey, symbol> as `${key}`]: T };
 
 export declare const jsonify: (x: any) => string;
 
 declare type JsonObject = { [key in string]?: tf.JsonValue };
 
-declare type KeyOf<T, resolved = keyof (Composite<T> extends tf.EmptyObject ? T : Composite<T>)> = resolved extends keyof T ? (`${Exclude<resolved, symbol>}` extends keyof T ? `${Exclude<resolved, symbol>}` : never) : `${Exclude<keyof T, symbol>}`;
+declare type KeyOf<T, K = keyof (Composite<T> extends tf.EmptyObject ? T : Composite<T>)> = Exclude<K extends keyof T ? (`${Exclude<K, symbol>}` extends keyof T ? `${Exclude<K, symbol>}` : never) : (`${Exclude<keyof T, symbol>}` extends keyof T ? `${Exclude<keyof T, symbol>}` : never), number>;
 
 declare interface MethodOptions extends FetchOptions {
   /** May be used as override if using custom non-standard method. */
@@ -271,7 +257,7 @@ declare interface MethodOptions extends FetchOptions {
 
 declare type Narrow<T> = T extends readonly (infer Item)[] ? Narrow<Item>[] : T extends (..._: readonly any[]) => infer Return ? Fn<Narrow<Return>> : T extends ReadonlyMap<infer K, infer V> ? Map<Narrow<K>, Narrow<V>> : T extends Promise<infer Resolved> ? Promise<Narrow<Resolved>> : T extends JsObject<infer Values> ? JsObject<Narrow<Values>> : T extends ReadonlySet<infer Item> ? Set<Narrow<Item>> : T extends undefined ? undefined : T extends boolean ? boolean : T extends bigint ? bigint : T extends number ? number : T extends string ? string : T extends object ? object : T extends null ? null : _;
 
-declare type primitive = tf.Primitive;
+declare type Primitive = Exclude<tf.Primitive, symbol>;
 
 declare interface Requested extends RequestInit {
   input: FetchInput;
@@ -285,9 +271,6 @@ export declare const type: (x: unknown) => string;
 
 declare type Union<T> = [T] extends [never] ? unknown : T extends never[] ? any[] : T extends tf.EmptyObject ? JsObject : IsLiteral<T> extends true ? (T | (Narrow<T> & _)) : T;
 
-declare type value = primitive | object;
-
-declare interface _ {
-}
+declare type Value = Primitive | object;
 
 export {};

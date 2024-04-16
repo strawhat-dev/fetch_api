@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2022",
+    "target": "esnext",
     "module": "esnext",
     "moduleDetection": "force",
     "moduleResolution": "bundler",
@@ -11,6 +11,7 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "esModuleInterop": true,
+    "disableSizeLimit": true,
     "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
     "allowSyntheticDefaultImports": true,

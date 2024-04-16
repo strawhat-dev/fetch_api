@@ -1,7 +1,8 @@
 import type { FetchedApi, FetchInput, FetchOptions } from '@/types/api';
-
+import { isObject, isPromise } from '@/utils';
 import { HTTP_CODES } from '@/constants';
-import { isobject, isPromise } from '@/utils';
+
+const { defineProperty } = Object;
 
 export const fetchedRequest = async (method: string, input: FetchInput, opts: FetchOptions) => {
   (opts as RequestInit).method ||= method.toUpperCase();
@@ -23,7 +24,7 @@ export const fetchedRequest = async (method: string, input: FetchInput, opts: Fe
     const ret = callback(res, req, id);
     const unawaited = isPromise(ret) && !('await' in onres!);
     const resolved = !unawaited && await ret;
-    if (isobject(resolved) && id in resolved) return resolved[id];
+    if (isObject(resolved) && id in resolved) return resolved[id];
   }
 
   // prettier-ignore
@@ -43,12 +44,12 @@ const handleError = (target: any, callback?: FetchedApi['onError']) => {
   return (error?: Error) => {
     error ||= 'Unknown Exception While Fetching...' as never;
     error instanceof Error || (error = new Error(error));
-    const errorTimeout = setTimeout(() => {
-      console.error('Unhandled (in fetched-api)', error!.stack || error);
-    }, 10);
+    const errorTimeout = setTimeout(() => (
+      console.error('Unhandled (in fetched-api)', error!.stack || error)
+    ), 10);
 
     return callback!(
-      Object.defineProperty(target, 'error', {
+      defineProperty(target, 'error', {
         enumerable: true,
         configurable: true,
         get: () => (clearTimeout(errorTimeout), error),
