@@ -1,56 +1,39 @@
 {
   "name": "fetched-api",
+  "version": "0.3.5",
   "description": "an api for fetch api.",
   "repository": "github:strawhat-dev/fetched-api",
-  "version": "0.3.5",
+  "sideEffects": false,
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
-  "types": "./dist/fetched-api.d.ts",
   "module": "./dist/fetched-api.js",
-  "exports": {
-    ".": "./dist/fetched-api.js"
-  },
-  "files": [
-    "dist"
-  ],
-  "engines": {
-    "node": ">=18"
-  },
+  "types": "./dist/fetched-api.d.ts",
+  "exports": { ".": "./dist/fetched-api.js" },
+  "files": ["dist"],
+  "engines": { "node": ">=18" },
   "scripts": {
     "build": "eslint && vite build",
     "build-dts": "eslint && vite build -- dts"
   },
-  "peerDependencies": {
-    "@types/node": ">=18",
-    "type-fest": "^4.x"
-  },
   "devDependencies": {
-    "@rollup/plugin-terser": "^0.4.4",
-    "@types/node": "^20.12.7",
-    "@typescript-eslint/eslint-plugin": "^7.7.0",
-    "@typescript-eslint/parser": "^7.7.0",
+    "@rollup/plugin-swc": "^0.3.1",
+    "@swc/core": "^1.5.28",
+    "@types/node": "^20.14.2",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
     "eslint": "^8.57.0",
     "eslint-define-config": "^2.1.0",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "^2.29.1",
-    "terser": "npm:@swc/core",
-    "type-fest": "^4.15.0",
+    "type-fest": "^4.20.0",
     "typescript": "^5.4.5",
-    "vite": "^5.2.9",
-    "vite-plugin-dts": "^3.8.3",
+    "vite": "^5.2.13",
+    "vite-plugin-dts": "^3.9.1",
     "vite-tsconfig-paths": "^4.3.2",
-    "vitest": "^1.5.0"
+    "vitest": "^1.6.0"
   },
-  "pnpm": {
-    "overrides": {
-      "@rollup/plugin-terser>terser": "$terser",
-      "vite-plugin-dts>@microsoft/api-extractor": "latest"
-    },
-    "peerDependencyRules": {
-      "allowAny": [
-        "terser"
-      ]
-    }
+  "peerDependencies": {
+    "@types/node": ">=18",
+    "type-fest": "^4.x"
   }
 }
