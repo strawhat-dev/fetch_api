@@ -1,0 +1,32 @@
+{
+  "useTabs": false,
+  "lineWidth": 150,
+  "indentWidth": 2,
+  "newLineKind": "lf",
+  "json": {
+    "trailingCommas": "never"
+  },
+  "prettier": {
+    "lineWidth": 1000,
+    "singleQuote": true,
+    "plugin.jsDoc": true,
+    "experimentalTernaries": true
+  },
+  "typescript": {
+    "quoteProps": "asNeeded",
+    "quoteStyle": "preferSingle",
+    "jsx.quoteStyle": "preferDouble",
+    "operatorPosition": "sameLine",
+    "arguments.trailingCommas": "never",
+    "arrowFunction.useParentheses": "force",
+    "module.sortImportDeclarations": "maintain",
+    "ignoreNodeCommentText": "prettier-ignore",
+    "memberExpression.preferSingleLine": true,
+    "associations": ["!dist/**/*"]
+  },
+  "plugins": [
+    "https://plugins.dprint.dev/json-latest.wasm",
+    "https://plugins.dprint.dev/typescript-latest.wasm",
+    "https://plugins.dprint.dev/prettier-latest.json@896b70f29ef8213c1b0ba81a93cee9c2d4f39ac2194040313cd433906db7bc7c"
+  ]
+}

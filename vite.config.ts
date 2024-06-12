@@ -1,12 +1,28 @@
+import type { JscConfig } from '@swc/core';
+
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { defineConfig } from 'vitest/config';
-import dts from 'vite-plugin-dts';
-import terser from '@rollup/plugin-terser';
 import tsconfigPaths from 'vite-tsconfig-paths';
+import swc from '@rollup/plugin-swc';
+import dts from 'vite-plugin-dts';
 
-const rollupTypes = process.argv.at(-1) === 'dts';
+const rollupTypes = process.argv.pop() === 'dts';
+
 const root = dirname(fileURLToPath(import.meta.url));
+
+const jsc = {
+  target: 'es2022',
+  preserveAllComments: true,
+  minify: {
+    ecma: '2022',
+    module: true,
+    mangle: true,
+    compress: true,
+    toplevel: true,
+    sourceMap: true,
+  },
+} as const satisfies JscConfig;
 
 export default defineConfig({
   root,
@@ -17,23 +33,16 @@ export default defineConfig({
     treeShaking: true,
   },
   build: {
+    minify: false,
     outDir: 'dist',
     target: 'esnext',
-    minify: 'terser',
     emptyOutDir: rollupTypes,
-    lib: { entry: resolve(root, 'src/fetched-api.ts'), formats: ['es'] },
-    rollupOptions: { output: { esModule: true, interop: 'esModule' }, treeshake: true },
+    lib: { formats: ['es'], entry: resolve(root, 'src/fetched-api.ts') },
+    rollupOptions: { treeshake: true, output: { esModule: true, interop: 'esModule' } },
   },
   plugins: [
     tsconfigPaths({ root }),
     rollupTypes && dts({ root, rollupTypes }),
-    terser({
-      ecma: 2022,
-      mangle: true,
-      module: true,
-      toplevel: true,
-      compress: true,
-      format: { ecma: 2022, comments: 'all' },
-    } as {}),
+    swc({ swc: { root, jsc, minify: true, isModule: true } }),
   ],
 });
