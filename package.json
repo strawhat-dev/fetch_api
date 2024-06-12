@@ -1,6 +1,6 @@
 {
   "name": "fetched-api",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "description": "an api for fetch api.",
   "repository": "github:strawhat-dev/fetched-api",
   "sideEffects": false,
@@ -8,9 +8,15 @@
   "type": "module",
   "module": "./dist/fetched-api.js",
   "types": "./dist/fetched-api.d.ts",
-  "exports": { ".": "./dist/fetched-api.js" },
-  "files": ["dist"],
-  "engines": { "node": ">=18" },
+  "exports": {
+    ".": "./dist/fetched-api.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "eslint && vite build",
     "build-dts": "eslint && vite build -- dts"
