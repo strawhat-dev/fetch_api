@@ -2,26 +2,16 @@ import type { Entries } from 'type-fest';
 import type { Composite, JsObject, Primitive } from '@/types';
 import { BODY_TYPES, SELF_CONSTRUCTABLE_TYPES, STRUCTURED_CLONABLE_TYPES } from '@/constants';
 
-const { isArray } = Array;
-const { keys, prototype, fromEntries } = Object;
-
-export const type = (x: unknown) => {
-  if (x == null || Number.isNaN(x)) return 'Nullish';
-  return x.constructor?.name ?? prototype.toString.call(x).slice(8, -1);
-};
+export const id = <T>(x: T) => x;
 
 export const isObject = (x: unknown): x is object => !isPrimitive(x);
 
+export const isRequest = (x: unknown): x is Request => !!x && type(x) === 'Request';
+
+export const isPromise = (x: unknown): x is Promise<any> => !!x && type(x) === 'Promise';
+
 export const isPrimitive = (x: unknown): x is Primitive => (
   !x || (typeof x !== 'object' && typeof x !== 'function')
-);
-
-export const isPromise = (x: unknown): x is Promise<any> => (
-  !!x && type(x) === 'Promise'
-);
-
-export const isRequest = (x: unknown): x is Request => (
-  !!x && type(x) === 'Request'
 );
 
 export const isNode = (x: unknown): x is Node => (
@@ -38,13 +28,14 @@ export const isFormDataEntryValue = (x: unknown): x is FormDataEntryValue => {
   return t === 'String' || t === 'File' || t === 'Blob';
 };
 
+export const type = (x: unknown) => {
+  if (x == null || Number.isNaN(x)) return 'Null';
+  return x.constructor?.name || prototype.toString.call(x).slice(8, -1);
+};
+
 export const jsonify = (x: any) => (
-  JSON.stringify(
-    type(x) === 'Map' ?
-      fromEntries(x) :
-      x?.[Symbol.iterator] ?
-      [...x] :
-      x
+  isPrimitive(x) ? x?.toString() : JSON.stringify(
+    type(x) === 'Map' ? fromEntries(x) : x[Symbol.iterator] ? [...x] : x
   )
 );
 
@@ -56,45 +47,45 @@ export const entries = <T extends JsObject>(obj: T) => {
   return ret as Entries<Composite<T>>;
 };
 
-export const clone = ((source: any) => {
-  if (skipClone(source)) return source;
-  if (isNode(source)) return source.cloneNode(true);
-  if (isArray(source)) return clone_array(source, new Array(source.length));
+export const clear = <T extends JsObject>(obj: T) => {
+  if (!obj) return {} as never;
+  for (const key of keys(obj)) delete obj[key];
+  return obj;
+};
 
-  const t = type(source);
-  const Constructor = source.constructor;
-  if (t === 'Set' || t === 'Map') return new Constructor(clone_array([...source]));
-  if (SELF_CONSTRUCTABLE_TYPES.has(t)) return new Constructor(source);
-  if (STRUCTURED_CLONABLE_TYPES.has(t) || ArrayBuffer.isView(source)) {
-    return structured_clone(source);
-  }
+export const clone = ((src: any) => {
+  let t: string;
+  if (skipClone(src)) return src;
+  if (isArray(src)) return cloneArray(src);
+  if (isNode(src)) return src.cloneNode(true);
+  if (SELF_CONSTRUCTABLE_TYPES.has(t = type(src))) return new src.constructor(src);
+  if (STRUCTURED_CLONABLE_TYPES.has(t) || ArrayBuffer.isView(src)) return structured_clone(src);
 
   const target: JsObject = {};
-  for (const key of keys(source)) {
-    let value = source[key];
+  for (const key of keys(src)) {
+    let value = src[key];
     skipClone(value) || (value = clone(value));
     target[key] = value;
   }
 
   return target;
-}) as <T>(source: T) => T;
+}) as <T>(src: T) => T;
 
-export const clear = ((obj) => {
-  if (!obj) return {};
-  for (const key of keys(obj) as []) delete obj[key];
-  return obj;
-}) as typeof clone;
+const { isArray } = Array;
+
+const { keys, prototype, fromEntries } = Object;
+
+const structured_clone = globalThis['structuredClone'] || id;
 
 const skipClone = (x: unknown) => !x || typeof x !== 'object';
 
-const structured_clone = globalThis['structuredClone'] || ((x) => x);
-
-const clone_array = (source: any[], target = source) => {
-  const len = source.length;
+const cloneArray = (src: any[]) => {
+  const len = src.length;
+  const target = new Array(len);
   for (let i = 0; i < len; ++i) {
-    let cur = source[i];
-    skipClone(cur) || (cur = clone(cur));
-    target[i] = cur;
+    let value = src[i];
+    skipClone(value) || (value = clone(value));
+    target[i] = value;
   }
 
   return target;

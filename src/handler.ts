@@ -1,59 +1,50 @@
 import type { FetchedApi, FetchInput, FetchOptions } from '@/types/api';
-import { isObject, isPromise } from '@/utils';
-import { HTTP_CODES } from '@/constants';
+import { id, isPromise } from '@/utils';
 
-const { defineProperty } = Object;
-
-export const fetchedRequest = async (method: string, input: FetchInput, opts: FetchOptions) => {
-  (opts as RequestInit).method ||= method.toUpperCase();
-  const { onres, onError, transform, ...init } = opts as FetchOptions & RequestInit;
-  const req = { ...init, input };
-  const res = await fetch(input, init).catch(handleError(req, onError));
-
-  if ('error' in req) return res;
-  if (res.status in HTTP_CODES) res.code = HTTP_CODES[res.status];
+export const fetchRequest = async (input: FetchInput, config: FetchOptions) => {
+  const { onres, onError, transform, ...init } = config as any;
+  const res = await fetch(input, init).catch(handleError({ ...init, input }, onError));
+  const callback = onres?.await || onres;
   if (!res.ok) {
-    const { status = '', code = 'UnsuccessfulResponse' } = res;
-    const error = new Error(`${status} ${code}`.trim(), { cause: { status, code } });
+    if ('error' in res) return res;
+    const cause = { status: res.status, statusText: res.statusText };
+    const error = Error(values(cause).filter(id).join(' '), { cause });
     return handleError(res, onError)(error);
+  } else if (typeof callback === 'function') {
+    const result = callback(res);
+    const unawaited = isPromise(result) && !('await' in onres!);
+    const resolved = unawaited ? undefined : await result;
+    if (resolved !== undefined) return resolved;
   }
 
-  const callback = onres?.['await' as never] || onres;
-  if (typeof callback === 'function') {
-    const id = Symbol(res.code ?? res.status);
-    const ret = callback(res, req, id);
-    const unawaited = isPromise(ret) && !('await' in onres!);
-    const resolved = !unawaited && await ret;
-    if (isObject(resolved) && id in resolved) return resolved[id];
-  }
-
-  // prettier-ignore
-  if (transform && res.body && !res.bodyUsed) {
-    return res.json().catch((error: Error) =>
-      error instanceof SyntaxError
-        ? error.message.match(/"(.*)" is not valid JSON$/)?.pop()
-        : handleError(res, onError)(error)
-    );
-  }
-
-  return res;
+  return handleResponse(res, transform).catch(handleError(res, onError));
 };
 
-const handleError = (target: any, callback?: FetchedApi['onError']) => {
-  typeof callback === 'function' || (callback = (ret) => ret);
-  return (error?: Error) => {
-    error ||= 'Unknown Exception While Fetching...' as never;
-    error instanceof Error || (error = new Error(error));
+// prettier-ignore
+const handleResponse = async (res: Response, transform?: boolean) => {
+  if (!transform || !res.body || res.bodyUsed) return res;
+  const type = res.headers.get('content-type')?.toLowerCase();
+  if (type?.includes('application/json')) return res.json();
+  const body = await res.text();
+  try { return JSON.parse(body); }
+  catch { return body; }
+};
+
+const handleError = (res: any, callback: FetchedApi['onError']) => {
+  typeof callback === 'function' || (callback = id);
+  return (error: Error) => {
+    error ||= 'unknown exception while fetching' as never;
+    error instanceof Error || (error = Error(error, { cause: res }));
     const errorTimeout = setTimeout(() => (
-      console.error('Unhandled (in fetched-api)', error!.stack || error)
+      console.error('Unhandled (in fetched-api)', error.stack || error)
     ), 10);
 
-    return callback!(
-      defineProperty(target, 'error', {
-        enumerable: true,
-        configurable: true,
-        get: () => (clearTimeout(errorTimeout), error),
-      }) ?? target
-    );
+    return (callback(defineProperty(res, 'error', {
+      enumerable: true,
+      configurable: true,
+      get: () => (clearTimeout(errorTimeout), error),
+    })) ?? res) as never;
   };
 };
+
+const { values, defineProperty } = Object;

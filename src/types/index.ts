@@ -1,28 +1,40 @@
 import type * as tf from 'type-fest';
 import type { Spreadable } from 'type-fest/source/spread';
 
-export type Primitive = Exclude<tf.Primitive, symbol>;
-export type Value = Primitive | object;
-export type Maybe<T> = T | undefined;
 export type Fn<T = any> = (...args: any[]) => T;
-export type SetEntry<T> = T extends ReadonlySet<infer Entry> ? Entry : never;
-export type Composite<T> = tf.OmitIndexSignature<tf.UnionToIntersection<Spread<T>>>;
-export type JsObject<T extends Value = any> = { [key in Exclude<PropertyKey, symbol> as `${key}`]: T };
-export type JsonObject = { [key in string]?: tf.JsonValue };
-export type KeyOf<T, K = keyof (Composite<T> extends tf.EmptyObject ? T : Composite<T>)> = Exclude<K extends keyof T ? (`${Exclude<K, symbol>}` extends keyof T ? `${Exclude<K, symbol>}` : never) : (`${Exclude<keyof T, symbol>}` extends keyof T ? `${Exclude<keyof T, symbol>}` : never), number>;
-export type ValueOf<T extends object, Obj = Composite<T>> = Obj[keyof Obj];
-export type Union<T> = [T] extends [never] ? unknown : T extends never[] ? any[] : T extends tf.EmptyObject ? JsObject : IsLiteral<T> extends true ? (T | (Narrow<T> & _)) : T;
-export type Spread<T1, T2 = T1> = T1 extends Spreadable ? tf.Spread<T1, T2 extends Spreadable ? T2 : _> : _;
 
-interface _ {}
+export type Primitive = Exclude<tf.Primitive, symbol>;
 
-type Extends<T1, T2> = [T1] extends [never] ? false :
-  [T2] extends [never] ? false :
-  T1 extends T2 ? true :
-  false;
+export type JsonObject = { [key in string]: tf.JsonValue };
+
+export type Composite<T> = tf.Simplify<tf.OmitIndexSignature<tf.UnionToIntersection<Spread<T>>>>;
+
+export type JsObject<T extends Value = any> = {
+  [key in Exclude<PropertyKey, symbol> as `${key}`]: T;
+};
+
+export type KeyOf<T, K = keyof (Composite<T> extends tf.EmptyObject ? T : Composite<T>)> = Exclude<
+  K extends keyof T ? (`${Exclude<K, symbol>}` extends keyof T ? `${Exclude<K, symbol>}` : never) :
+    (`${Exclude<keyof T, symbol>}` extends keyof T ? `${Exclude<keyof T, symbol>}` : never),
+  number
+>;
+
+export type Union<T> = [T] extends [never] ? unknown :
+  T extends never[] ? any[] :
+  T extends tf.EmptyObject ? JsObject :
+  IsLiteral<T> extends true ? T extends Primitive ? T | (Narrow<T> & Any) : T & JsObject :
+  T;
+
+interface Any {}
+
+type Value = Primitive | object;
+
+type Spread<T1, T2 = T1> = T1 extends Spreadable ? T2 extends Spreadable ? tf.Spread<T1, T2> : T1 & T2 : T1 & T2;
+
+type Extends<T1, T2> = [T1] extends [never] ? false : [T2] extends [never] ? false : T1 extends T2 ? true : false;
 
 type Narrow<T> = T extends readonly (infer Item)[] ? Narrow<Item>[] :
-  T extends (..._: readonly any[]) => infer Return ? Fn<Narrow<Return>> :
+  T extends (...args: readonly any[]) => infer Return ? Fn<Narrow<Return>> :
   T extends ReadonlyMap<infer K, infer V> ? Map<Narrow<K>, Narrow<V>> :
   T extends Promise<infer Resolved> ? Promise<Narrow<Resolved>> :
   T extends JsObject<infer Values> ? JsObject<Narrow<Values>> :
@@ -34,7 +46,7 @@ type Narrow<T> = T extends readonly (infer Item)[] ? Narrow<Item>[] :
   T extends string ? string :
   T extends object ? object :
   T extends null ? null :
-  _;
+  Any;
 
 type IsLiteral<T> = [T] extends [never] ? false :
   boolean extends T ? false :

@@ -1,31 +1,29 @@
-import type { FetchConfig, FetchedApi } from '@/types/api';
-
-import { fetchedRequest } from '@/handler';
-import { clear, clone, isPrimitive } from '@/utils';
+import type { FetchedApi } from '@/types/api';
 import { DESCRIPTOR_MAP, HTTP_METHODS } from '@/constants';
-import { parseConfig, parseHeaders, parseInput } from '@/parse-api';
+import { parseConfig, parseInput } from '@/parse-api';
+import { clear, clone, isPrimitive } from '@/utils';
+import { fetchRequest } from '@/handler';
 
 export const initapi: FetchedApi['create'] = (defaults) => {
   const api = assign(getInstanceMethods(), clone(defaults)) as FetchedApi;
   for (const method of HTTP_METHODS) {
-    const config = defaults?.[method];
     const hasBody = method === 'post' || method === 'put' || method === 'patch';
-    api[method] = define(method, (input, ...args) => {
-      let opts = args.pop() as FetchConfig;
-      hasBody && (args.length ? (opts.body = args.pop()!) : (opts = { body: opts as {} }));
-      const headers = parseHeaders(api, api[method], opts ?? {});
-      const { baseURL, params, ...rest } = parseConfig(method, api, api[method], opts, headers);
-      return fetchedRequest(method, parseInput(input, baseURL, params), rest);
+    api[method] = define(method, async (input, ...args) => {
+      let request = args.pop() as {};
+      hasBody && (request = args.length ? { ...request, body: args.pop() } : { body: request });
+      const init = [method.toUpperCase(), api, api[method], { ...request }] as const;
+      const { baseURL, params, ...config } = parseConfig(...init);
+      return fetchRequest(parseInput(input, params, baseURL), config);
     });
 
-    assign(api[method], clone(config));
+    assign(api[method], clone(defaults?.[method]));
   }
 
   return defineProperties(api, DESCRIPTOR_MAP);
 };
 
 const { keys, assign, defineProperty, defineProperties } = Object;
-const define = <T>(name: string, fn: T) => defineProperty(fn, 'name', { value: name }) as T;
+const define = <T>(value: string, method: T) => defineProperty(method, 'name', { value });
 const getInstanceMethods = (): Partial<FetchedApi> => ({
   create: define('create', initapi),
   with(this, config) {
