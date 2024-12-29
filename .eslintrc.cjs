@@ -19,6 +19,8 @@ module.exports = defineConfig({
   rules: {
     '@typescript-eslint/ban-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-empty-object-type': 'off',
+    '@typescript-eslint/no-unused-expressions': 'off',
     '@typescript-eslint/consistent-type-imports': 'error',
     'import/consistent-type-specifier-style': 'error',
   },
