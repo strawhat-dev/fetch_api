@@ -1,22 +1,22 @@
 import type { FetchedApi } from '@/types/api';
-import { DESCRIPTOR_MAP, HTTP_METHODS } from '@/constants';
 import { parseConfig, parseInput } from '@/parse-api';
+import { DESCRIPTOR_MAP, HTTP_METHODS } from '@/constants';
 import { clear, clone, isPrimitive } from '@/utils';
 import { fetchRequest } from '@/handler';
 
-export const initapi: FetchedApi['create'] = (defaults) => {
-  const api = assign(getInstanceMethods(), clone(defaults)) as FetchedApi;
+export const initapi: FetchedApi['create'] = (config) => {
+  const api = assign(getInstanceMethods(), clone(config)) as FetchedApi;
   for (const method of HTTP_METHODS) {
     const hasBody = method === 'post' || method === 'put' || method === 'patch';
     api[method] = define(method, async (input, ...args) => {
-      let request = args.pop() as {};
+      let request = { ...args.pop()! };
       hasBody && (request = args.length ? { ...request, body: args.pop() } : { body: request });
-      const init = [method.toUpperCase(), api, api[method], { ...request }] as const;
-      const { baseURL, params, ...config } = parseConfig(...init);
-      return fetchRequest(parseInput(input, params, baseURL), config);
+      const init = [method.toUpperCase(), api, api[method], request] as const;
+      const { baseURL, params, ...rest } = parseConfig(...init);
+      return fetchRequest(parseInput(input, baseURL, params), rest);
     });
 
-    assign(api[method], clone(defaults?.[method]));
+    assign(api[method], clone(config?.[method]));
   }
 
   return defineProperties(api, DESCRIPTOR_MAP);

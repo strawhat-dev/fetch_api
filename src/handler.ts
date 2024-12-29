@@ -1,14 +1,16 @@
 import type { FetchedApi, FetchInput, FetchOptions } from '@/types/api';
-import { id, isPromise } from '@/utils';
+import { identity, isPromise } from '@/utils';
+
+const { values, defineProperty } = Object;
 
 export const fetchRequest = async (input: FetchInput, config: FetchOptions) => {
-  const { onres, onError, transform, ...init } = config as any;
-  const res = await fetch(input, init).catch(handleError({ ...init, input }, onError));
-  const callback = onres?.await || onres;
+  const { onres, onError, transform, ...init } = config;
+  const res = await fetch(input, init as {}).catch(handleError({ ...init, input }, onError));
+  const callback = onres?.['await' as never] || onres;
   if (!res.ok) {
     if ('error' in res) return res;
     const cause = { status: res.status, statusText: res.statusText };
-    const error = Error(values(cause).filter(id).join(' '), { cause });
+    const error = Error(values(cause).filter(Boolean).join(' '), { cause });
     return handleError(res, onError)(error);
   } else if (typeof callback === 'function') {
     const result = callback(res);
@@ -30,21 +32,22 @@ const handleResponse = async (res: Response, transform?: boolean) => {
   catch { return body; }
 };
 
-const handleError = (res: any, callback: FetchedApi['onError']) => {
-  typeof callback === 'function' || (callback = id);
+const handleError = (cause: any, callback: FetchedApi['onError']) => {
+  typeof callback === 'function' || (callback = identity);
   return (error: Error) => {
     error ||= 'unknown exception while fetching' as never;
-    error instanceof Error || (error = Error(error, { cause: res }));
+    error instanceof Error || (error = Error(error, { cause }));
     const errorTimeout = setTimeout(() => (
       console.error('Unhandled (in fetched-api)', error.stack || error)
     ), 10);
 
-    return (callback(defineProperty(res, 'error', {
+    return (callback(defineProperty(cause, 'error', {
       enumerable: true,
       configurable: true,
-      get: () => (clearTimeout(errorTimeout), error),
-    })) ?? res) as never;
+      get() {
+        clearTimeout(errorTimeout);
+        return error;
+      },
+    })) ?? cause) as never;
   };
 };
-
-const { values, defineProperty } = Object;

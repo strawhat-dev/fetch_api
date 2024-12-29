@@ -1,11 +1,11 @@
 import type * as tf from 'type-fest';
 import type { IncomingHttpHeaders } from 'http';
-import type { JsObject, JsonObject, KeyOf, Union } from '@/types';
+import type { Any, JsObject, KeyOf, Union } from '@/types';
 import type { HttpMethod } from '@/constants';
 
 export type FetchInput = RequestInfo | URL;
 export type FetchHeaders = Partial<HttpHeaders> | tf.Entries<HttpHeaders> | object;
-export type FetchQuery = JsObject<tf.JsonPrimitive> | ConstructorParameters<typeof URLSearchParams>[0];
+export type FetchParams = string | [string, string][] | JsObject<tf.JsonPrimitive> | URLSearchParams;
 export type FetchBody = BodyInit | tf.Jsonifiable | Set<tf.Jsonifiable> | Map<tf.JsonPrimitive, tf.Jsonifiable>;
 export type FetchConfig = FetchOptions & { [method in HttpMethod]?: tf.Merge<FetchedApi[method], {}> };
 
@@ -147,7 +147,7 @@ export interface FetchOptions extends Omit<RequestInit, 'method' | 'body' | 'hea
   /**
    * URL search parameters to be suffixed to the request input.
    */
-  params?: FetchQuery;
+  params?: FetchParams;
   /**
    * Headers to be merged and constructed into a new `Headers` object, with any previous headers being overwritten using the {@link https://developer.mozilla.org/en-US/docs/Web/API/Headers/set | `Headers.set`} method.
    *
@@ -177,7 +177,7 @@ export interface FetchOptions extends Omit<RequestInit, 'method' | 'body' | 'hea
  * i.e. `DELETE` + `TRACE` + `CONNECT` + `OPTIONS`
  */
 interface FetchedMethod<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
-  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
+  <Data = Any, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
     options?: MethodOptions & { transform?: Transform },
   ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
@@ -188,7 +188,7 @@ interface FetchedMethod<T extends Descriptor = { responseHasBody: false }> exten
  * i.e. `POST` + `PUT` + `PATCH`
  */
 interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
-  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
+  <Data = Any, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
     body?: FetchBody,
     options?: MethodOptions & { transform?: Transform },
@@ -199,8 +199,10 @@ interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false 
  * Methods that _should never_ have a `body` since `fetch` will throw an error anyway if provided.\
  * i.e. `GET` + `HEAD`
  */
-interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: false }> extends Omit<FetchOptions, 'body'> {
-  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(
+interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: false }>
+  extends Omit<FetchOptions, 'body'>
+{
+  <Data = Any, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
     options?: Omit<MethodOptions, 'body'> & { transform?: Transform },
   ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
