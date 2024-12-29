@@ -1,5 +1,6 @@
 import type * as tf from 'type-fest';
-import { IncomingHttpHeaders } from 'http';
+import type { IncomingHttpHeaders } from 'http';
+import type { Spreadable } from 'type-fest/source/spread';
 
 export {};
 export const clone: <T>(src: T) => T;
@@ -211,12 +212,15 @@ type Value = Primitive | object;
 type Fn<T = any> = (...args: any[]) => T;
 type Primitive = Exclude<tf.Primitive, symbol>;
 type JsObject<T extends Value = any> = { [key in Exclude<PropertyKey, symbol> as `${key}`]: T };
-type AsKey<T> = T extends tf.Primitive ? `${Exclude<T, symbol>}` : never;
-type KeyOf<T, _ = T extends readonly any[] ? tf.ArrayIndices<T> : keyof T> = _ extends keyof T ?
-  AsKey<_> extends keyof T ? AsKey<_> : never :
-  never;
+type Composite<T> = tf.Simplify<tf.OmitIndexSignature<tf.UnionToIntersection<Spread<T>>>>;
+type Spread<T1, T2 = T1> = T1 extends Spreadable ? (T2 extends Spreadable ? tf.Spread<T1, T2> : T1 & T2) : T1 & T2;
+type KeyOf<T, K = keyof (Composite<T> extends tf.EmptyObject ? T : Composite<T>)> = Exclude<
+  K extends keyof T ? (`${Exclude<K, symbol>}` extends keyof T ? `${Exclude<K, symbol>}` : never) :
+    (`${Exclude<keyof T, symbol>}` extends keyof T ? `${Exclude<keyof T, symbol>}` : never),
+  number
+>;
 
-type Union<T> = [T] extends [never] ? unknown :
+type Union<T> = [T] extends [never] ? never :
   T extends never[] ? any[] :
   T extends tf.EmptyObject ? JsObject :
   IsLiteral<T> extends true ? T extends Primitive ? T | (Narrow<T> & Any) : T & JsObject :
