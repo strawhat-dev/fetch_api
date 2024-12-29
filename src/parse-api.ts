@@ -1,18 +1,21 @@
+import type { Merge } from 'type-fest';
 import type { HttpMethod } from '@/constants';
 import type { Entry, JsObject, Union } from '@/types';
-import type { FetchInput, FetchOptions, FetchParams } from '@/types/api';
+import type { FetchInput, FetchOptions } from '@/types/api';
 import { isBodyInit, isFormDataEntryValue, isRequest, jsonify } from '@/utils';
 
 const { isArray } = Array;
 
 const { entries, assign } = Object;
 
-export const parseInput = (input: FetchInput, baseURL?: string, params?: FetchParams) => {
+export const parseInput = (input: FetchInput, baseURL?: string, params?: URLSearchParams) => {
   if (!((baseURL ||= '') || params)) return input;
   let path = (((input ||= '') as Request).url ?? input.toString()).trim();
-  (path.startsWith('http://') || path.startsWith('https://')) && ([baseURL, path] = [path, baseURL]);
-  const url = new URL(path, baseURL);
-  params && (url.search += (url.search.startsWith('?') ? '&' : '?') + params);
+  (path.startsWith('http://') || path.startsWith('https://')) && ([baseURL, path] = [path, '']);
+  baseURL.endsWith('/') && (baseURL = baseURL.slice(0, -1));
+  path.startsWith('/') && (path = path.slice(1));
+  const url = new URL(baseURL + '/' + path);
+  params?.entries?.().forEach((entry: Entry) => url.searchParams.append(...entry));
   return isRequest(input) ? new Request(url, input) : url;
 };
 
@@ -30,7 +33,7 @@ export const parseConfig = (method: Union<Uppercase<HttpMethod>>, ...configs: Fe
     new URLSearchParams(config.body) :
     jsonify(config.body);
 
-  return config as FetchOptions;
+  return config as Merge<FetchOptions, { params?: URLSearchParams }>;
 };
 
 const mergeConfigs = (configs: FetchOptions[]) => {
