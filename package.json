@@ -1,6 +1,6 @@
 {
   "name": "fetched-api",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "an api for fetch api.",
   "repository": "github:strawhat-dev/fetched-api",
   "sideEffects": false,
