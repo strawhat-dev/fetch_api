@@ -1,6 +1,5 @@
 import type * as tf from 'type-fest';
 import { IncomingHttpHeaders } from 'http';
-import { Spreadable } from 'type-fest/source/spread';
 
 export {};
 export const clone: <T>(src: T) => T;
@@ -145,7 +144,7 @@ export interface FetchOptions extends Omit<RequestInit, 'method' | 'body' | 'hea
   /** Base URL to be prefixed to the request input. */
   baseURL?: string;
   /** URL search parameters to be suffixed to the request input. */
-  params?: FetchQuery;
+  params?: FetchParams;
   /**
    * Headers to be merged and constructed into a new `Headers` object, with any previous headers being overwritten using the {@link https://developer.mozilla.org/en-US/docs/Web/API/Headers/set | `Headers.set`} method.
    *
@@ -166,7 +165,7 @@ export interface FetchOptions extends Omit<RequestInit, 'method' | 'body' | 'hea
 
 export type FetchInput = RequestInfo | URL;
 export type FetchHeaders = Partial<HttpHeaders> | tf.Entries<HttpHeaders> | object;
-export type FetchQuery = JsObject<tf.JsonPrimitive> | ConstructorParameters<typeof URLSearchParams>[0];
+export type FetchParams = string | [string, string][] | JsObject<tf.JsonPrimitive> | URLSearchParams;
 export type FetchBody = BodyInit | tf.Jsonifiable | Set<tf.Jsonifiable> | Map<tf.JsonPrimitive, tf.Jsonifiable>;
 type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete' | 'trace' | 'connect' | 'options' | 'head';
 type HttpHeaders = tf.Merge<Record<Union<KeyOf<IncomingHttpHeaders>>, string>, Record<'accept' | 'content-type', Union<HttpContentType>>>;
@@ -179,7 +178,7 @@ type Descriptor = { responseHasBody: boolean };
  * I.e. `DELETE` + `TRACE` + `CONNECT` + `OPTIONS`
  */
 interface FetchedMethod<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
-  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(input: FetchInput, options?: MethodOptions & { transform?: Transform }): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
+  <Data = Any, Transform extends boolean = T['responseHasBody']>(input: FetchInput, options?: MethodOptions & { transform?: Transform }): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
 /**
@@ -187,7 +186,7 @@ interface FetchedMethod<T extends Descriptor = { responseHasBody: false }> exten
  * I.e. `POST` + `PUT` + `PATCH`
  */
 interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
-  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(input: FetchInput, body?: FetchBody, options?: MethodOptions & { transform?: Transform }): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
+  <Data = Any, Transform extends boolean = T['responseHasBody']>(input: FetchInput, body?: FetchBody, options?: MethodOptions & { transform?: Transform }): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
 /**
@@ -195,7 +194,7 @@ interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false 
  * I.e. `GET` + `HEAD`
  */
 interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: false }> extends Omit<FetchOptions, 'body'> {
-  <Data = JsonObject, Transform extends boolean = T['responseHasBody']>(input: FetchInput, options?: Omit<MethodOptions, 'body'> & { transform?: Transform }): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
+  <Data = Any, Transform extends boolean = T['responseHasBody']>(input: FetchInput, options?: Omit<MethodOptions, 'body'> & { transform?: Transform }): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
 interface MethodOptions extends FetchOptions {
@@ -211,36 +210,17 @@ interface Any {}
 type Value = Primitive | object;
 type Fn<T = any> = (...args: any[]) => T;
 type Primitive = Exclude<tf.Primitive, symbol>;
-type JsonObject = { [key in string]: tf.JsonValue };
-type Composite<T> = tf.Simplify<tf.OmitIndexSignature<tf.UnionToIntersection<Spread<T>>>>;
 type JsObject<T extends Value = any> = { [key in Exclude<PropertyKey, symbol> as `${key}`]: T };
+type AsKey<T> = T extends tf.Primitive ? `${Exclude<T, symbol>}` : never;
+type KeyOf<T, _ = T extends readonly any[] ? tf.ArrayIndices<T> : keyof T> = _ extends keyof T ?
+  AsKey<_> extends keyof T ? AsKey<_> : never :
+  never;
 
-type KeyOf<T, K = keyof (Composite<T> extends tf.EmptyObject ? T : Composite<T>)> = Exclude<
-  K extends keyof T ?
-    `${Exclude<K, symbol>}` extends keyof T ?
-      `${Exclude<K, symbol>}`
-    : never
-  : `${Exclude<keyof T, symbol>}` extends keyof T ? `${Exclude<keyof T, symbol>}`
-  : never,
-  number
->;
-
-type Spread<T1, T2 = T1> =
-  T1 extends Spreadable ?
-    T2 extends Spreadable ?
-      tf.Spread<T1, T2>
-    : T1 & T2
-  : T1 & T2;
-
-type Union<T> =
-  [T] extends [never] ? unknown
-  : T extends never[] ? any[]
-  : T extends tf.EmptyObject ? JsObject
-  : IsLiteral<T> extends true ?
-    T extends Primitive ?
-      T | (Narrow<T> & Any)
-    : T & JsObject
-  : T;
+type Union<T> = [T] extends [never] ? unknown :
+  T extends never[] ? any[] :
+  T extends tf.EmptyObject ? JsObject :
+  IsLiteral<T> extends true ? T extends Primitive ? T | (Narrow<T> & Any) : T & JsObject :
+  T;
 
 type Extends<T1, T2> =
   [T1] extends [never] ? false
@@ -257,7 +237,7 @@ type IsLiteral<T> =
   : object extends T ? false
   : T extends readonly (infer Item)[] ? IsLiteral<Item>
   : T extends JsObject ? Extends<tf.PickIndexSignature<T>, tf.EmptyObject>
-  : Function extends T ? false
+  : Fn extends T ? false
   : Extends<T, tf.Primitive>;
 
 type Narrow<T> =
