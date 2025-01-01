@@ -53,6 +53,6 @@ export default defineConfig({
   plugins: [
     tsconfigPaths({ root }) as Plugin,
     rollupTypes && dts({ root, rollupTypes }) as Plugin,
-    swc({ swc: { root, jsc, minify: true, isModule: true, module: { type: 'nodenext', lazy: true } } }),
+    swc({ swc: { root, jsc, minify: true, isModule: true, module: { type: 'es6', lazy: true } } }),
   ],
 });

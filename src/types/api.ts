@@ -8,6 +8,7 @@ export type FetchHeaders = Partial<HttpHeaders> | tf.Entries<HttpHeaders> | obje
 export type FetchParams = string | [string, string][] | JsObject<tf.JsonPrimitive> | URLSearchParams;
 export type FetchBody = BodyInit | tf.Jsonifiable | Set<tf.Jsonifiable> | Map<tf.JsonPrimitive, tf.Jsonifiable>;
 export type FetchConfig = FetchOptions & { [method in HttpMethod]?: tf.Merge<FetchedApi[method], {}> };
+export type FetchRequestInit = tf.Merge<FetchOptions & RequestInit, { params?: URLSearchParams }>;
 
 /**
  * Simple and lightweight configurable request client with cross-support for both browsers and node.js _(versions >=18)_, providing many axios-like conveniences such as automatic transforms and an alternative intuitive api, all while using `fetch-api` natively without any other external dependencies.
@@ -21,9 +22,8 @@ export type FetchConfig = FetchOptions & { [method in HttpMethod]?: tf.Merge<Fet
  * api.baseURL = 'https://pokeapi.co/api/v2/pokemon';
  * // ...per method configuration alternative
  * api.get.baseURL = 'https://pokeapi.co/api/v2/pokemon';
- * // config may still be provided on request, similarly to native fetch-api
- * const requestConfig = { headers: { accept: 'application/json' }, onError: console.error };
- * const data = await api.get('/pikachu', requestConfig);
+ * // ...per method options on request
+ * await api.get('/pikachu', { headers: { accept: 'application/json' }, onError: console.error });
  * ```
  */
 export interface FetchedApi extends FetchOptions {
@@ -65,6 +65,10 @@ export interface FetchedApi extends FetchOptions {
    * @returns The _updated_ instance
    */
   use(config: FetchConfig): FetchedApi;
+  /**
+   * Generic method and wrapper for fetch requests.
+   */
+  fetch(req: FetchMethodOptions): Promise<Response & { error?: Error }>;
   /**
    * The `GET` method requests a representation of the specified resource. Requests using `GET` should only retrieve data.
    *
@@ -124,48 +128,52 @@ export interface FetchedApi extends FetchOptions {
 /** Available options configurable per instance, method, or call. */
 export interface FetchOptions extends Omit<RequestInit, 'method' | 'body' | 'headers'> {
   /**
-   * Transform the default return type for fetch requests to the result of `res.json()` _(or `res.text()`)_ for resolved responses.\
+   * Automatically transform the default return type for fetched requests using `res.json()` _(or `res.text()`)_ for resolved responses.\
    * _While `true`, the resolved response may still be accessed using a provided `onres` callback._
    *
    * @defaultValue `true` for `get`, `post`, and `options` methods.
    */
   transform?: boolean;
   /**
-   * Body types supported natively by `fetch` are passed as is. Otherwise the body will be transformed and converted to:
-   * - `string`, resulting from converting the body with `JSON.stringify`.
-   * - `URLSearchParams`, if the `Content-Type` header is set to `"application/x-www-form-urlencoded"`.
-   * - `FormData`, if the `Content-Type` header is set to `"multipart/form-data"`.
+   * Body types supported natively by `fetch` are passed as is; otherwise the body will be transformed and converted to:
+   * - `string`, resulting from `JSON.stringify`
+   * - `URLSearchParams`, if `"Content-Type"` header is set to `"application/x-www-form-urlencoded"`
+   * - `FormData`, if `"Content-Type"` header is set to `"multipart/form-data"`
    *   - Note: This header will be omitted during the request since it is {@link https://developer.mozilla.org/en-US/docs/Web/API/FormData/Using_FormData_Objects#sect4 | not meant to be set explicitly}.
    *
    * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/fetch#body | Fetch API Body}
    */
   body?: FetchBody;
   /**
-   * Base URL to be prefixed to the request input.
+   * Base URL to be _prefixed_ to the request input.
    */
   baseURL?: string;
   /**
-   * URL search parameters to be suffixed to the request input.
+   * URL search parameters to be _suffixed_ to the request input.
    */
   params?: FetchParams;
   /**
-   * Headers to be merged and constructed into a new `Headers` object, with any previous headers being overwritten using the {@link https://developer.mozilla.org/en-US/docs/Web/API/Headers/set | `Headers.set`} method.
+   * Headers to be merged and constructed into a new `Headers` object, with any previous headers being _overwritten_ using the {@link https://developer.mozilla.org/en-US/docs/Web/API/Headers/set | `Headers.set`} method.
    *
    * @see {@link RequestInit.headers}
    */
   headers?: FetchHeaders;
   /**
-   * Headers to be merged and constructed into a new `Headers` object, with any previous headers being appended to using the {@link https://developer.mozilla.org/en-US/docs/Web/API/Headers/append | `Headers.append`} method.
+   * Headers to be merged and constructed into a new `Headers` object, with any previous headers being _appended_ to using the {@link https://developer.mozilla.org/en-US/docs/Web/API/Headers/append | `Headers.append`} method.
    *
    * @see {@link RequestInit.headers}
    */
   appendHeaders?: FetchHeaders;
   /**
-   * Define a default callback for resolved requests with sucessful responses, which may be used to perform some background task,
-   * or handle & intercept the returned response (by returning a _non-`undefined`_ value, where the resolved value will be returned instead).
-   * Asynchronous callbacks that return a `Promise` may be awaited and resolved if the callback is provided under the sub-property `onres.await`.
+   * Define a default callback for requests _before_ they are executed.
    */
-  onres?: ((res: Response) => any) | { await: (res: Response) => Promise<any> };
+  onreq?: (req: Requested) => any;
+  /**
+   * - Define a default callback for resolved requests with sucessful responses, which may be used to perform some background task,
+   * or handle & intercept the returned response (by returning a _non-`undefined`_ value, where the resolved value will be returned instead).
+   * - Asynchronous callbacks that return a `Promise` may be awaited and resolved if the callback is provided under the sub-property `onres.await`.
+   */
+  onres?: ((req: Requested, res: Response) => any) | { await: (req: Requested, res: Response) => Promise<any> };
   /**
    * Define a default callback to handle any errors or non-sucessful responses.
    */
@@ -178,8 +186,11 @@ export interface FetchOptions extends Omit<RequestInit, 'method' | 'body' | 'hea
  */
 interface FetchedMethod<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
   <Data = Any, Transform extends boolean = T['responseHasBody']>(
+    options: FetchOptions & { transform?: Transform },
+  ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
+  <Data = Any, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
-    options?: MethodOptions & { transform?: Transform },
+    options?: FetchOptions & { transform?: Transform },
   ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
@@ -189,9 +200,16 @@ interface FetchedMethod<T extends Descriptor = { responseHasBody: false }> exten
  */
 interface FetchedMethodWithBody<T extends Descriptor = { responseHasBody: false }> extends FetchOptions {
   <Data = Any, Transform extends boolean = T['responseHasBody']>(
+    options: FetchOptions & { transform?: Transform },
+  ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
+  <Data = Any, Transform extends boolean = T['responseHasBody']>(
+    body: FetchBody,
+    options?: Omit<FetchOptions, 'body'> & { transform?: Transform },
+  ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
+  <Data = Any, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
     body?: FetchBody,
-    options?: MethodOptions & { transform?: Transform },
+    options?: Omit<FetchOptions, 'body'> & { transform?: Transform },
   ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
@@ -203,13 +221,16 @@ interface FetchedMethodWithoutBody<T extends Descriptor = { responseHasBody: fal
   extends Omit<FetchOptions, 'body'>
 {
   <Data = Any, Transform extends boolean = T['responseHasBody']>(
+    options: Omit<FetchOptions, 'body'> & { transform?: Transform },
+  ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
+  <Data = Any, Transform extends boolean = T['responseHasBody']>(
     input: FetchInput,
-    options?: Omit<MethodOptions, 'body'> & { transform?: Transform },
+    options?: Omit<FetchOptions, 'body'> & { transform?: Transform },
   ): Promise<(Transform extends false ? Response : Data) & { error?: Error }>;
 }
 
-interface MethodOptions extends FetchOptions {
-  /** May be used as override if using custom non-standard method. */
+interface FetchMethodOptions extends Omit<FetchOptions, 'transform' | 'baseURL'> {
+  url?: string | URL;
   method?: Union<HttpMethod>;
 }
 
